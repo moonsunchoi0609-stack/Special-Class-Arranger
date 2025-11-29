@@ -1,4 +1,3 @@
-
 export type SchoolLevel = 'ELEMENTARY_MIDDLE' | 'HIGH';
 
 export interface TagDefinition {
@@ -30,25 +29,30 @@ export interface AppState {
 }
 
 // AI Analysis Types
-export interface ClassAnalysisData {
-  classId: string;
-  riskScore: number; // 0-100 (Higher is riskier)
-  balanceScore: number; // 0-100 (Higher is better)
-  comment: string;
-}
-
-export interface SuggestedMove {
+export interface AiSuggestion {
+  title: string;
   studentName: string;
   currentClass: string;
   targetClass: string;
   reason: string;
+  expectedEffect: string;
+}
+
+export interface ClassDetail {
+  classId: string;
+  statusTitle: string;
+  currentSituation: string;
+  positiveFactors: string;
+  advice: string;
+  riskScore: number;
+  balanceScore: number;
 }
 
 export interface AiAnalysisResult {
-  overallScore: number;
-  overallComment: string;
-  classes: ClassAnalysisData[];
-  recommendations: string[];
-  suggestedMoves?: SuggestedMove[];
-  predictedScore?: number;
+  overallReview: string;
+  classBriefs: string[];
+  classDetails: ClassDetail[];
+  suggestions: AiSuggestion[];
+  currentScore: number;
+  predictedScore: number;
 }
