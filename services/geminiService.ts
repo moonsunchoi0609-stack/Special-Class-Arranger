@@ -90,7 +90,7 @@ export const analyzeClasses = async (
         description: "현재 상태에서 가장 효과적인 최적의 제안 1개만 포함 (여러 개 제안 금지)"
       },
       currentScore: { type: Type.NUMBER, description: "현재 상태의 종합 점수 (0~100)" },
-      predictedScore: { type: Type.NUMBER, description: "모든 제안 적용 시 예상되는 최적 종합 점수 (0~100)" }
+      predictedScore: { type: Type.NUMBER, description: "AI 제안 적용 시 예상되는 최적 종합 점수 (0~100)" }
     },
     required: ["overallReview", "classBriefs", "classDetails", "suggestions", "currentScore", "predictedScore"]
   };

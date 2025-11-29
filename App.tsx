@@ -723,6 +723,7 @@ function App() {
         analysisResult={aiAnalysis}
         students={students}
         tags={tags}
+        classCount={classCount}
         onReanalyze={handleAIAnalyze}
         isLoading={isAnalyzing}
       />

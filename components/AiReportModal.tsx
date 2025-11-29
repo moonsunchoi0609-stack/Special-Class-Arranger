@@ -14,6 +14,7 @@ interface AiReportModalProps {
   analysisResult: AiAnalysisResult | string | null;
   students?: Student[];
   tags?: TagDefinition[];
+  classCount?: number;
   onReanalyze?: () => void;
   isLoading?: boolean;
 }
@@ -86,10 +87,11 @@ const SimulationView: React.FC<{
                 </span>
             </h5>
         </div>
-        <div className="overflow-x-auto w-full">
-            <div className="flex gap-3 min-w-max p-4 items-start">
+        {/* Adjusted Container for Scroll */}
+        <div className="overflow-x-auto w-full pb-2">
+            <div className="flex gap-3 min-w-max p-4 pr-6 items-start">
                 {sortedClassIds.map(classId => (
-                    <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
+                    <div key={classId} className="w-48 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
                         <div className="p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-lg flex justify-between items-center">
                             <span className="font-bold text-sm text-slate-700">{classId}반</span>
                             <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">{classes[classId].length}명</span>
@@ -160,7 +162,7 @@ const SimulationView: React.FC<{
 };
 
 export const AiReportModal: React.FC<AiReportModalProps> = ({ 
-  isOpen, onClose, analysisResult, students, tags, onReanalyze, isLoading 
+  isOpen, onClose, analysisResult, students, tags, classCount, onReanalyze, isLoading 
 }) => {
   const [expandedSimulations, setExpandedSimulations] = useState<Set<number>>(new Set());
 
@@ -205,7 +207,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
               <h2 className="font-bold text-lg flex items-center gap-2">
                 <Wand2 size={20} className="text-purple-200" />
-                AI 반편성 분석 결과
+                AI 분석 결과
               </h2>
               <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X size={20} /></button>
             </div>
@@ -233,8 +235,8 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
   // 4. Success State (Structured Data)
   const { currentScore, predictedScore, overallReview, classBriefs, classDetails, suggestions } = analysisResult;
   
-  // Calculate class count from details
-  const derivedClassCount = classDetails.length;
+  // Use passed classCount or fallback to derived
+  const finalClassCount = classCount || classDetails.length;
 
   // Chart Data Preparation
   const barChartData = classDetails.map(c => ({
@@ -324,7 +326,8 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                         <Activity size={20} className="text-indigo-500" />
                         반별 지표 비교
                     </h3>
-                    <div className="flex-1 min-h-[250px] w-full">
+                    {/* Fixed height to prevent vertical stretching */}
+                    <div className="w-full h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -527,7 +530,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                                 <SimulationView 
                                                     students={students}
                                                     movements={sug.movements}
-                                                    classCount={derivedClassCount}
+                                                    classCount={finalClassCount}
                                                     tags={tags}
                                                 />
                                             )}
