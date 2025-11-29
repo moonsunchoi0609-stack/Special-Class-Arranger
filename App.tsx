@@ -1083,44 +1083,55 @@ function App() {
                 </div>
                 
                 <div className="space-y-4">
+                    {/* Name and Gender Row */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                        <input 
-                            type="text" 
-                            value={studentFormName}
-                            onChange={(e) => setStudentFormName(e.target.value)}
-                            placeholder="학생 이름을 입력하세요"
-                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                            autoFocus
-                        />
-                    </div>
-                    
-                    {/* Gender Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer p-2 border rounded-lg hover:bg-blue-50 transition-colors border-gray-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">학생 정보</label>
+                        <div className="flex gap-2">
+                            <div className="flex-1">
                                 <input 
-                                    type="radio" 
-                                    name="gender" 
-                                    value="male" 
-                                    checked={studentFormGender === 'male'} 
-                                    onChange={() => setStudentFormGender('male')}
-                                    className="w-4 h-4 text-blue-600" 
+                                    type="text" 
+                                    value={studentFormName}
+                                    onChange={(e) => setStudentFormName(e.target.value)}
+                                    placeholder="이름 입력"
+                                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                    autoFocus
                                 />
-                                <span className="text-sm font-medium text-gray-700">남학생</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer p-2 border rounded-lg hover:bg-rose-50 transition-colors border-gray-200 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50 flex-1">
-                                <input 
-                                    type="radio" 
-                                    name="gender" 
-                                    value="female" 
-                                    checked={studentFormGender === 'female'} 
-                                    onChange={() => setStudentFormGender('female')}
-                                    className="w-4 h-4 text-rose-600" 
-                                />
-                                <span className="text-sm font-medium text-gray-700">여학생</span>
-                            </label>
+                            </div>
+                            <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                                <label 
+                                    className={`
+                                        cursor-pointer px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1
+                                        ${studentFormGender === 'male' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
+                                    `}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="gender" 
+                                        value="male" 
+                                        checked={studentFormGender === 'male'} 
+                                        onChange={() => setStudentFormGender('male')}
+                                        className="hidden" 
+                                    />
+                                    남
+                                </label>
+                                <div className="w-px h-4 bg-gray-300 mx-0.5"></div>
+                                <label 
+                                    className={`
+                                        cursor-pointer px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1
+                                        ${studentFormGender === 'female' ? 'bg-white text-rose-600 shadow-sm' : 'text-gray-500 hover:bg-gray-100'}
+                                    `}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="gender" 
+                                        value="female" 
+                                        checked={studentFormGender === 'female'} 
+                                        onChange={() => setStudentFormGender('female')}
+                                        className="hidden" 
+                                    />
+                                    여
+                                </label>
+                            </div>
                         </div>
                     </div>
 
