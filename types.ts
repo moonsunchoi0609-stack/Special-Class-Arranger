@@ -29,13 +29,18 @@ export interface AppState {
 }
 
 // AI Analysis Types
-export interface AiSuggestion {
-  title: string;
+export interface AiMovement {
   studentName: string;
   currentClass: string;
   targetClass: string;
+}
+
+export interface AiSuggestion {
+  title: string;
+  movements: AiMovement[];
   reason: string;
   expectedEffect: string;
+  predictedScore: number;
 }
 
 export interface ClassDetail {

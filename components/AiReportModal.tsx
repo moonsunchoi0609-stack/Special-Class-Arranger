@@ -1,9 +1,9 @@
 import React from 'react';
-import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, User, Star, Activity, ThumbsUp } from 'lucide-react';
+import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, User, Star, Activity, ThumbsUp, ArrowLeftRight } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
-import { AiAnalysisResult, Student, TagDefinition } from '../types';
+import { AiAnalysisResult, Student, TagDefinition, AiMovement } from '../types';
 
 interface AiReportModalProps {
   isOpen: boolean;
@@ -164,7 +164,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                     </div>
                 </section>
 
-                {/* 4. Class Briefs (Status) - Moved here */}
+                {/* 4. Class Briefs (Status) */}
                 <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
                     <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
                         <Star size={20} className="text-amber-500" />
@@ -194,7 +194,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                     {classDetails.map((cls) => (
                         <div key={cls.classId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                                <h4 className="text-lg font-bold text-gray-800">{cls.classId}반</h4>
+                                <h4 className="text-lg font-bold text-gray-800">{cls.classId}</h4>
                                 <div className="flex gap-2 text-xs font-bold">
                                     <span className={`px-2 py-1 rounded bg-red-100 text-red-700`}>Risk: {cls.riskScore}</span>
                                     <span className={`px-2 py-1 rounded bg-blue-100 text-blue-700`}>Bal: {cls.balanceScore}</span>
@@ -230,87 +230,101 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                         <Wand2 className="text-indigo-600" size={20} />
                         AI가 제안한 편성안 분석
                     </h3>
-                    {predictedScore > 0 && (
-                        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-indigo-100">
-                            <span className="text-xs font-bold text-gray-500 uppercase">예상 균형 점수</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-400 line-through text-sm">{currentScore}</span>
-                                <ArrowRight size={14} className="text-gray-400" />
-                                <span className={`text-xl font-black ${predictedScore > currentScore ? 'text-green-600' : 'text-gray-800'}`}>
-                                    {predictedScore}
-                                </span>
-                                {predictedScore > currentScore && (
-                                    <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
-                                        +{predictedScore - currentScore}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    <div className="bg-white px-4 py-1.5 rounded-full border border-indigo-100 text-sm text-gray-500 shadow-sm">
+                        총 {suggestions?.length || 0}개의 개선 제안이 있습니다.
+                    </div>
                 </div>
 
                 {suggestions && suggestions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {suggestions.map((sug, idx) => {
-                            const originalStudent = getOriginalStudent(sug.studentName);
-                            return (
-                                <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-3 relative overflow-hidden group hover:shadow-md transition-all">
-                                    {/* Decoration */}
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                                    
-                                    <div className="mb-2">
-                                        <h4 className="font-bold text-indigo-700 text-sm">{sug.title}</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                        {suggestions.map((sug, idx) => (
+                            <div key={idx} className="bg-white rounded-xl shadow-sm border border-indigo-100 flex flex-col md:flex-row overflow-hidden hover:shadow-md transition-all">
+                                
+                                {/* Header / Score Section */}
+                                <div className="p-4 bg-indigo-50 border-b md:border-b-0 md:border-r border-indigo-100 flex flex-col justify-center items-center min-w-[140px] text-center gap-2">
+                                    <div className="w-10 h-10 rounded-full bg-white text-indigo-600 flex items-center justify-center shadow-sm font-bold text-lg">
+                                        {idx + 1}
+                                    </div>
+                                    <div>
+                                        <div className="text-xs text-gray-500 font-bold uppercase mb-1">예상 균형 점수</div>
+                                        <div className="text-2xl font-black text-indigo-700">{sug.predictedScore}</div>
+                                    </div>
+                                    {sug.predictedScore > currentScore && (
+                                        <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                                            +{sug.predictedScore - currentScore}점
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Content Section */}
+                                <div className="flex-1 p-5">
+                                    <div className="mb-4">
+                                        <h4 className="font-bold text-lg text-gray-800 mb-1">{sug.title}</h4>
+                                        <p className="text-sm text-gray-500">{sug.reason}</p>
                                     </div>
 
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
-                                                <User size={16} />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-gray-800 flex items-center gap-2">
-                                                    {sug.studentName}
-                                                    {originalStudent && originalStudent.gender && (
-                                                        <span className={`text-[10px] px-1.5 rounded-full ${originalStudent.gender === 'male' ? 'bg-blue-100 text-blue-600' : 'bg-rose-100 text-rose-600'}`}>
-                                                            {originalStudent.gender === 'male' ? '남' : '여'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {/* Tags */}
-                                                {originalStudent && tags && (
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {originalStudent.tagIds.map(tid => {
-                                                            const t = tags.find(tag => tag.id === tid);
-                                                            return t ? (
-                                                                <span key={t.id} className={`text-[10px] px-1.5 py-0.5 rounded ${t.colorBg} ${t.colorText}`}>
-                                                                    {t.label}
-                                                                </span>
-                                                            ) : null;
-                                                        })}
+                                    {/* Movements List */}
+                                    <div className="space-y-3 mb-4">
+                                        {sug.movements.map((move, mIdx) => {
+                                            const originalStudent = getOriginalStudent(move.studentName);
+                                            return (
+                                                <div key={mIdx} className="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                                    
+                                                    {/* Student Info */}
+                                                    <div className="flex items-center gap-2 min-w-[140px]">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                                            originalStudent?.gender === 'female' 
+                                                                ? 'bg-rose-100 text-rose-600' 
+                                                                : 'bg-blue-100 text-blue-600'
+                                                        }`}>
+                                                            {originalStudent?.gender === 'female' ? '여' : '남'}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-gray-800 text-sm">
+                                                                {move.studentName}
+                                                            </div>
+                                                            {/* Tags */}
+                                                            {originalStudent && tags && (
+                                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                    {originalStudent.tagIds.map(tid => {
+                                                                        const t = tags.find(tag => tag.id === tid);
+                                                                        return t ? (
+                                                                            <span key={t.id} className={`text-[9px] px-1 py-0.5 rounded leading-none ${t.colorBg} ${t.colorText}`}>
+                                                                                {t.label}
+                                                                            </span>
+                                                                        ) : null;
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
+
+                                                    {/* Direction */}
+                                                    <div className="flex-1 flex items-center justify-center px-2">
+                                                        <div className="flex items-center gap-2 text-sm font-medium w-full max-w-[200px]">
+                                                            <div className="flex-1 text-center py-1 bg-white border border-gray-200 rounded text-gray-600">
+                                                                {move.currentClass || '미배정'}
+                                                            </div>
+                                                            <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
+                                                            <div className="flex-1 text-center py-1 bg-indigo-600 text-white rounded shadow-sm">
+                                                                {move.targetClass}반
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
-                                    {/* Movement Visualization */}
-                                    <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg text-sm">
-                                        <div className="flex-1 text-center font-bold text-gray-500 bg-white border border-gray-200 rounded py-1">
-                                            {sug.currentClass || '미배정'}
-                                        </div>
-                                        <ArrowRight size={16} className="text-indigo-400" />
-                                        <div className="flex-1 text-center font-bold text-white bg-indigo-500 rounded py-1 shadow-sm">
-                                            {sug.targetClass}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-gray-50 p-2 rounded text-xs space-y-1">
-                                        <p className="text-gray-700"><strong>이유:</strong> {sug.reason}</p>
-                                        <p className="text-green-700"><strong>효과:</strong> {sug.expectedEffect}</p>
+                                    {/* Expected Effect */}
+                                    <div className="text-sm bg-green-50 text-green-800 p-3 rounded-lg border border-green-100 flex gap-2">
+                                        <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
+                                        <span><strong>기대 효과:</strong> {sug.expectedEffect}</span>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="text-center py-8 bg-white/50 rounded-xl border border-dashed border-gray-300">
