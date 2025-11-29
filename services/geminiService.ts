@@ -52,7 +52,7 @@ export const analyzeClasses = async (
           type: Type.OBJECT,
           properties: {
             classId: { type: Type.STRING },
-            statusTitle: { type: Type.STRING, description: "형식: 'N반 (핵심키워드 / ⚠️ 주의 단계)'" },
+            statusTitle: { type: Type.STRING, description: "형식: '핵심키워드'" },
             currentSituation: { type: Type.STRING, description: "현황: 물리적 지원, 성비 등 구체적 서술" },
             positiveFactors: { type: Type.STRING, description: "긍정적 요소: 완화 요인 등" },
             advice: { type: Type.STRING, description: "조언: 구체적인 해결 방안" },
@@ -121,11 +121,11 @@ export const analyzeClasses = async (
     1. **overallReview**: 전체 상황을 꿰뚫는 핵심 문장 하나.
     2. **classBriefs**: "1반: ...", "2반: ..." 형태로 각 반의 핵심 문제를 1줄 요약.
     3. **classDetails**:
-       - statusTitle: "N반 (상태요약 / 위험도)" 형태로 작성. 예: "1반 (물리적 지원 과부하 / ⚠️ 경고)"
+       - statusTitle: "상태요약" 형태로 작성. 예: "물리적 지원 과부하"
        - currentSituation: 구체적 수치 포함 (예: "휠체어 2명과 기저귀 3명이 집중됨")
        - positiveFactors: 완화 요인이 있다면 반드시 언급.
     4. **suggestions (변경 제안)**:
-       - 현재 상태가 불균형하다면, **반드시 1개 이상의 구체적인 이동 제안**을 포함하세요.
+       - 현재 상태가 불균형하다면, **반드시 3개 이상의 구체적인 이동 제안**을 포함하세요.
        - expectedEffect: "1반은 ~게 좋아지고, 2반은 ~게 개선됨" 형태로 구체적 작성.
     5. **Scores**: 현재 점수(currentScore)보다 개선 후 점수(predictedScore)가 높게 나오도록 논리적으로 산정하세요.
   `;

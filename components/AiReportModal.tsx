@@ -82,7 +82,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
       <div 
-        className="bg-white w-full max-w-5xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200"
+        className="bg-white w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -137,29 +137,52 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                 </div>
             </section>
 
-            {/* 2. Class Indicators (Chart) */}
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h3 className="text-gray-800 font-bold mb-6 flex items-center gap-2">
-                    <Activity size={20} className="text-indigo-500" />
-                    반별 지표 비교
-                </h3>
-                <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} domain={[0, 100]} />
-                            <Tooltip 
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                cursor={{fill: '#f9fafb'}}
-                            />
-                            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                            <Bar dataKey="Risk" name="지도 난이도(Risk)" fill="#f87171" radius={[4, 4, 0, 0]} barSize={30} />
-                            <Bar dataKey="Balance" name="균형 점수(Balance)" fill="#60a5fa" radius={[4, 4, 0, 0]} barSize={30} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </section>
+            {/* Split Section: Chart & Briefs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* 2. Class Indicators (Chart) */}
+                <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
+                    <h3 className="text-gray-800 font-bold mb-6 flex items-center gap-2">
+                        <Activity size={20} className="text-indigo-500" />
+                        반별 지표 비교
+                    </h3>
+                    <div className="flex-1 min-h-[250px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} domain={[0, 100]} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    cursor={{fill: '#f9fafb'}}
+                                />
+                                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                                <Bar dataKey="Risk" name="지도 난이도(Risk)" fill="#f87171" radius={[4, 4, 0, 0]} barSize={30} />
+                                <Bar dataKey="Balance" name="균형 점수(Balance)" fill="#60a5fa" radius={[4, 4, 0, 0]} barSize={30} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </section>
+
+                {/* 4. Class Briefs (Status) - Moved here */}
+                <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
+                    <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
+                        <Star size={20} className="text-amber-500" />
+                        반별 핵심 현황
+                    </h3>
+                    <div className="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[300px] lg:max-h-none pr-1">
+                        {classBriefs.map((brief, idx) => (
+                            <div key={idx} className="flex gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100 hover:bg-amber-50 transition-colors">
+                                <CheckCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+                                <p className="text-sm text-gray-700 leading-snug">{brief}</p>
+                            </div>
+                        ))}
+                        {classBriefs.length === 0 && (
+                            <div className="text-center text-gray-400 py-4 flex-1 flex items-center justify-center">특별한 제안 사항이 없습니다.</div>
+                        )}
+                    </div>
+                </section>
+            </div>
 
             {/* 3. Current Class Detailed Analysis */}
             <section>
@@ -197,25 +220,6 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                             </div>
                         </div>
                     ))}
-                </div>
-            </section>
-
-            {/* 4. AI Recommendations (Class Briefs) */}
-            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
-                    <Star size={20} className="text-amber-500" />
-                    AI 제안 사항 (핵심 요약)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {classBriefs.map((brief, idx) => (
-                        <div key={idx} className="flex gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100 hover:bg-amber-50 transition-colors">
-                            <CheckCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
-                            <p className="text-sm text-gray-700 leading-snug">{brief}</p>
-                        </div>
-                    ))}
-                    {classBriefs.length === 0 && (
-                        <div className="text-center text-gray-400 py-4 col-span-2">특별한 제안 사항이 없습니다.</div>
-                    )}
                 </div>
             </section>
 
