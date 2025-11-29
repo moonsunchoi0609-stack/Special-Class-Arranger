@@ -719,6 +719,8 @@ function App() {
         isOpen={showAiReport} 
         onClose={() => setShowAiReport(false)}
         analysisResult={aiAnalysis}
+        students={students}
+        tags={tags}
       />
 
       {/* Student Add/Edit Modal */}
