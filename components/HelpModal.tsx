@@ -79,13 +79,16 @@ export const HelpModal: React.FC<HelpModalProps> = ({ onClose }) => {
             </h3>
             <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 leading-relaxed marker:text-amber-400">
               <li>
-                <strong className="text-gray-800">분리 배정 관리:</strong> 특정 학생들을 분리해야 할 경우, 좌측 '분리 배정 그룹' 기능을 활용하여 사전에 규칙을 설정할 수 있습니다.
+                <strong className="text-gray-800">분리 배정 관리:</strong> 특정 학생들을 분리해야 할 경우, 설정의 '분리 배정 그룹' 기능을 활용할 수 있습니다.
               </li>
               <li>
-                <strong className="text-gray-800">프로젝트 백업:</strong> 작업 중단 시 프로젝트 저장 기능을 통해 현재 상태를 파일로 백업하고, 추후 불러오기를 통해 작업을 재개할 수 있습니다.
+                <strong className="text-gray-800">프로젝트 백업:</strong> 작업 중단 시 프로젝트 저장 기능을 통해 현재 상태를 파일로 백업하고, 불러오기를 통해 작업을 재개할 수 있습니다.
               </li>
               <li>
                 <strong className="text-gray-800">샘플 데이터:</strong> 앱 사용이 처음이라면 '샘플 데이터 자동입력'을 눌러 기능을 체험해 보세요.
+              </li>
+              <li>
+                <strong className="text-gray-800">데이터 초기화:</strong> 설정의 '데이터 초기화'를 선택하면 추가된 태그 및 학생 카드가 전부 삭제됩니다.
               </li>
             </ul>
           </section>
