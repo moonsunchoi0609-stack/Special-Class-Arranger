@@ -87,10 +87,17 @@ export const analyzeClasses = async (
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
+      config: {
+        responseMimeType: 'text/plain',
+      }
     });
-    return response.text || "분석 결과를 생성할 수 없습니다.";
+    
+    if (response.text) {
+        return response.text;
+    }
+    return "분석 결과를 생성할 수 없습니다.";
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    return `AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. (Error: ${error instanceof Error ? error.message : String(error)})`;
   }
 };
