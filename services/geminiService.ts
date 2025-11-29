@@ -18,14 +18,7 @@ export const analyzeClasses = async (
   classCount: number,
   schoolLevel: SchoolLevel
 ): Promise<string> => {
-  // Vite 환경 변수 사용
-  const apiKey = import.meta.env.VITE_API_KEY;
-  
-  if (!apiKey) {
-    return "API Key가 설정되지 않았습니다. Netlify 설정에서 VITE_API_KEY를 추가해주세요.";
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // Prepare data context
   const classesMap: Record<string, Student[]> = {};
