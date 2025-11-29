@@ -123,8 +123,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onChange={(e) => setClassCount(Number(e.target.value))}
                   className="w-full accent-indigo-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>1</span><span>10</span>
+                <div className="flex justify-between text-xs text-gray-400 mt-1 px-1">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <span key={num} className="w-3 text-center">{num}</span>
+                  ))}
                 </div>
               </div>
             </div>

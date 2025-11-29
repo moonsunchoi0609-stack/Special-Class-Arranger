@@ -75,85 +75,85 @@ const SimulationView: React.FC<{
   const sortedClassIds = Object.keys(classes).sort((a, b) => Number(a) - Number(b));
 
   return (
-    <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 overflow-x-auto animate-in slide-in-from-top-2 duration-300">
-        <h5 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-            <LayoutDashboard size={16} className="text-indigo-600" />
-            전체 편성 시뮬레이션
-            <span className="text-xs font-normal text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 mr-1"></span>
-                이동하는 학생 강조됨
-            </span>
-        </h5>
-        {/* min-w-max ensures the flex container takes up full required width, triggering scroll on parent */}
-        <div className="flex gap-3 min-w-max pb-2 items-start">
-            {sortedClassIds.map(classId => (
-                <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
-                    <div className="p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-lg flex justify-between items-center">
-                        <span className="font-bold text-sm text-slate-700">{classId}반</span>
-                        <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">{classes[classId].length}명</span>
-                    </div>
-                    {/* Ensure full height is shown by removing overflow-y and height constraints */}
-                    <div className="p-2 space-y-2">
-                         {classes[classId].length === 0 && (
-                            <div className="text-center text-xs text-gray-300 py-4">학생 없음</div>
-                         )}
-                         {classes[classId].sort((a,b)=>a.name.localeCompare(b.name)).map(s => {
-                             const isMoved = movedStudentIds.has(s.id);
-                             
-                             // Find movement info if this student moved
-                             let movementLabel = '이동';
-                             if (isMoved) {
-                                 // We need to find the movement that caused this
-                                 // Since we only have access to `movements` (list of AiMovement)
-                                 // and `s` (Student with assignedClassId already updated)
-                                 // We reconstruct the label from the movement definition
-                                 const masked = maskName(s.name);
-                                 const move = movements.find(m => m.studentName === masked);
-                                 if (move) {
-                                     const fromClass = move.currentClass.replace(/반$/, '');
-                                     movementLabel = `변경 전: ${fromClass}반`;
-                                 }
-                             }
-
-                             return (
-                                 <div key={s.id} className={`
-                                    p-2 rounded border text-sm relative transition-all
-                                    ${isMoved 
-                                        ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-200 shadow-sm z-10' 
-                                        : 'bg-white border-slate-100 hover:border-slate-300'
+    <div className="mt-4 bg-slate-50 rounded-xl border border-slate-200 animate-in slide-in-from-top-2 duration-300">
+        <div className="p-3 border-b border-slate-200">
+            <h5 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <LayoutDashboard size={16} className="text-indigo-600" />
+                전체 편성 시뮬레이션
+                <span className="text-xs font-normal text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200 ml-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 mr-1"></span>
+                    이동하는 학생 강조됨
+                </span>
+            </h5>
+        </div>
+        <div className="overflow-x-auto w-full">
+            <div className="flex gap-3 min-w-max p-4 items-start">
+                {sortedClassIds.map(classId => (
+                    <div key={classId} className="w-52 bg-white rounded-lg border border-slate-200 flex flex-col shadow-sm flex-shrink-0">
+                        <div className="p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-lg flex justify-between items-center">
+                            <span className="font-bold text-sm text-slate-700">{classId}반</span>
+                            <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 font-medium">{classes[classId].length}명</span>
+                        </div>
+                        {/* Ensure full height is shown by removing overflow-y and height constraints */}
+                        <div className="p-2 space-y-2">
+                            {classes[classId].length === 0 && (
+                                <div className="text-center text-xs text-gray-300 py-4">학생 없음</div>
+                            )}
+                            {classes[classId].sort((a,b)=>a.name.localeCompare(b.name)).map(s => {
+                                const isMoved = movedStudentIds.has(s.id);
+                                
+                                // Find movement info if this student moved
+                                let movementLabel = '이동';
+                                if (isMoved) {
+                                    // We need to find the movement that caused this
+                                    const masked = maskName(s.name);
+                                    const move = movements.find(m => m.studentName === masked);
+                                    if (move) {
+                                        const fromClass = move.currentClass.replace(/반$/, '');
+                                        movementLabel = `변경 전: ${fromClass}반`;
                                     }
-                                 `}>
-                                     <div className="flex justify-between items-start mb-1.5">
-                                         <span className={`font-bold ${isMoved ? 'text-indigo-900' : 'text-slate-700'}`}>
-                                            {s.name}
-                                         </span>
-                                         {isMoved && (
-                                             <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
-                                                 {movementLabel}
-                                             </span>
-                                         )}
-                                     </div>
-                                     <div className="flex flex-wrap gap-1">
-                                         {s.gender && (
-                                            <span className={`text-[10px] px-1 rounded border ${s.gender === 'male' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
-                                                {s.gender === 'male' ? '남' : '여'}
+                                }
+
+                                return (
+                                    <div key={s.id} className={`
+                                        p-2 rounded border text-sm relative transition-all
+                                        ${isMoved 
+                                            ? 'bg-indigo-50 border-indigo-400 ring-1 ring-indigo-200 shadow-sm z-10' 
+                                            : 'bg-white border-slate-100 hover:border-slate-300'
+                                        }
+                                    `}>
+                                        <div className="flex justify-between items-start mb-1.5">
+                                            <span className={`font-bold ${isMoved ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                                {s.name}
                                             </span>
-                                         )}
-                                         {s.tagIds.map(tid => {
-                                             const t = tags.find(tag => tag.id === tid);
-                                             return t ? (
-                                                 <span key={tid} className={`text-[9px] px-1 rounded border border-transparent ${t.colorBg} ${t.colorText}`}>
-                                                     {t.label}
-                                                 </span>
-                                             ) : null;
-                                         })}
-                                     </div>
-                                 </div>
-                             )
-                         })}
+                                            {isMoved && (
+                                                <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse whitespace-nowrap">
+                                                    {movementLabel}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1">
+                                            {s.gender && (
+                                                <span className={`text-[10px] px-1 rounded border ${s.gender === 'male' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                                                    {s.gender === 'male' ? '남' : '여'}
+                                                </span>
+                                            )}
+                                            {s.tagIds.map(tid => {
+                                                const t = tags.find(tag => tag.id === tid);
+                                                return t ? (
+                                                    <span key={tid} className={`text-[9px] px-1 rounded border border-transparent ${t.colorBg} ${t.colorText}`}>
+                                                        {t.label}
+                                                    </span>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
-                </div>
-            ))}
+                ))}
+            </div>
         </div>
     </div>
   );

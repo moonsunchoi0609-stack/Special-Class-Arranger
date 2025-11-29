@@ -335,7 +335,8 @@ function App() {
         if (!name) name = `학생${i+1}`; 
         usedNames.add(name);
 
-        const gender: 'male' | 'female' = Math.random() > 0.5 ? 'male' : 'female';
+        // 남녀 성비 6:4로 조정 (남 60%, 여 40%)
+        const gender: 'male' | 'female' = Math.random() < 0.6 ? 'male' : 'female';
 
         const rand = Math.random();
         let tagCount = 0;
