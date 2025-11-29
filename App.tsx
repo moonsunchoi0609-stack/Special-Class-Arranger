@@ -471,7 +471,6 @@ function App() {
         </div>
       )}
 
-      <HelpModal onClose={() => setShowHelpModal(false)} />
       {showHelpModal && <HelpModal onClose={() => setShowHelpModal(false)} />}
       
       <AiReportModal 
