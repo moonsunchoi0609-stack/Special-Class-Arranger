@@ -10,7 +10,7 @@ import {
     Student, TagDefinition, SchoolLevel, SeparationRule, AppState 
 } from './types';
 import { 
-    INITIAL_TAGS, TAG_COLORS
+    INITIAL_TAGS, TAG_COLORS, UNASSIGNED_ID
 } from './constants';
 import { ClassColumn } from './components/ClassColumn';
 import { TagBadge } from './components/TagBadge';
@@ -60,6 +60,17 @@ function App() {
 
   // File Input Ref for Loading Data
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- TOUCH DRAG STATE ---
+  const [touchDragState, setTouchDragState] = useState<{
+      student: Student;
+      startX: number;
+      startY: number;
+      currentX: number;
+      currentY: number;
+      width: number;
+      height: number;
+  } | null>(null);
 
   // --- PERSISTENCE ---
   useEffect(() => {
@@ -218,6 +229,60 @@ function App() {
           return { ...s, assignedClassId: finalClassId };
       }));
   };
+
+  // --- HANDLERS: TOUCH DRAG ---
+
+  const onTouchDragStart = (student: Student, e: React.TouchEvent, cardRect: DOMRect) => {
+    const touch = e.touches[0];
+    setTouchDragState({
+      student,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      currentX: touch.clientX,
+      currentY: touch.clientY,
+      width: cardRect.width,
+      height: cardRect.height
+    });
+  };
+
+  useEffect(() => {
+    if (!touchDragState) return;
+
+    const handleWindowTouchMove = (e: TouchEvent) => {
+      if (e.cancelable) e.preventDefault(); // Stop scrolling while dragging
+      const touch = e.touches[0];
+      setTouchDragState(prev => prev ? ({
+        ...prev,
+        currentX: touch.clientX,
+        currentY: touch.clientY
+      }) : null);
+    };
+
+    const handleWindowTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const dropZone = target?.closest('[data-drop-zone]');
+      
+      if (dropZone && touchDragState) {
+        const zoneId = dropZone.getAttribute('data-drop-zone');
+        // 'unassigned' is the ID for the unassigned area
+        const targetClassId = zoneId === UNASSIGNED_ID ? '' : zoneId;
+        
+        if (targetClassId !== null) {
+            handleDropStudent(touchDragState.student.id, targetClassId);
+        }
+      }
+      setTouchDragState(null);
+    };
+
+    window.addEventListener('touchmove', handleWindowTouchMove, { passive: false });
+    window.addEventListener('touchend', handleWindowTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchmove', handleWindowTouchMove);
+      window.removeEventListener('touchend', handleWindowTouchEnd);
+    };
+  }, [touchDragState, students]); // Dependencies for drop logic
 
   // --- HANDLERS: TAGS ---
 
@@ -518,7 +583,7 @@ function App() {
   const classList = Array.from({ length: classCount }, (_, i) => (i + 1).toString());
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden text-gray-800">
+    <div className="flex h-screen bg-gray-100 overflow-hidden text-gray-800 relative">
       {/* Sidebar */}
       <div className={`
         bg-white border-r border-gray-200 flex flex-col transition-all duration-300 z-20 shadow-xl
@@ -847,6 +912,7 @@ function App() {
                                 </div>
                                 <div 
                                     className="bg-gray-100 rounded-xl p-2 border-2 border-dashed border-gray-300 flex-1 overflow-y-auto transition-colors hover:bg-gray-50"
+                                    data-drop-zone={UNASSIGNED_ID}
                                     onDragOver={(e) => {
                                         e.preventDefault();
                                         e.dataTransfer.dropEffect = 'move';
@@ -880,6 +946,7 @@ function App() {
                                                     allTags={tags} 
                                                     onEdit={(s) => openStudentModal(s)}
                                                     onDelete={deleteStudent}
+                                                    onTouchDragStart={onTouchDragStart}
                                                 />
                                             </div>
                                         </div>
@@ -924,6 +991,7 @@ function App() {
                                     onDropStudent={handleDropStudent}
                                     onEditStudent={(s) => openStudentModal(s)}
                                     onDeleteStudent={deleteStudent}
+                                    onTouchDragStart={onTouchDragStart}
                                 />
                             </div>
                         ))}
@@ -932,6 +1000,32 @@ function App() {
             )}
         </div>
       </div>
+
+      {/* TOUCH DRAG OVERLAY */}
+      {touchDragState && (
+        <div 
+            style={{
+                position: 'fixed',
+                left: touchDragState.currentX,
+                top: touchDragState.currentY,
+                width: touchDragState.width,
+                height: touchDragState.height,
+                // Center the dragged item on finger
+                transform: 'translate(-50%, -50%) rotate(3deg)', 
+                pointerEvents: 'none',
+                zIndex: 9999,
+                opacity: 0.9,
+            }}
+        >
+             <StudentCard 
+                student={touchDragState.student}
+                allTags={tags}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                isGhost={true}
+             />
+        </div>
+      )}
 
       {/* Help Modal */}
       {showHelpModal && (

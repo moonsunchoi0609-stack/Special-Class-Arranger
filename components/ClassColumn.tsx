@@ -14,6 +14,7 @@ interface ClassColumnProps {
   onDropStudent: (studentId: string, targetClassId: string) => void;
   onEditStudent: (student: Student) => void;
   onDeleteStudent: (id: string) => void;
+  onTouchDragStart?: (student: Student, e: React.TouchEvent, cardRect: DOMRect) => void;
 }
 
 export const ClassColumn: React.FC<ClassColumnProps> = ({
@@ -25,7 +26,8 @@ export const ClassColumn: React.FC<ClassColumnProps> = ({
   separationRules,
   onDropStudent,
   onEditStudent,
-  onDeleteStudent
+  onDeleteStudent,
+  onTouchDragStart
 }) => {
   const isUnassigned = id === UNASSIGNED_ID;
   const maxCapacity = MAX_CAPACITY[schoolLevel];
@@ -69,6 +71,7 @@ export const ClassColumn: React.FC<ClassColumnProps> = ({
 
   return (
     <div
+      data-drop-zone={id}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       className={`
@@ -123,6 +126,7 @@ export const ClassColumn: React.FC<ClassColumnProps> = ({
             isWarning={conflictingStudentIds.has(student.id)}
             onEdit={onEditStudent}
             onDelete={onDeleteStudent}
+            onTouchDragStart={onTouchDragStart}
           />
         ))}
       </div>
