@@ -265,12 +265,17 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md z-10">
-          <h2 className="font-bold text-2xl flex items-center gap-3">
-            <Wand2 size={24} className="text-purple-200" />
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md z-10">
+          <h2 className="font-bold text-lg flex items-center gap-2">
+            <Wand2 size={20} className="text-purple-200" />
             AI 분석 리포트
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors"><X size={24} /></button>
+          <button 
+            onClick={onClose} 
+            className="p-1 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Content Body */}
