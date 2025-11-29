@@ -67,7 +67,7 @@ export const analyzeClasses = async (
         items: {
           type: Type.OBJECT,
           properties: {
-            title: { type: Type.STRING, description: "제안 제목 (예: 1: 1반과 2반 성비 조정 트레이드)" },
+            title: { type: Type.STRING, description: "제안 제목 (예: 제안1: 1반과 2반 성비 조정 트레이드)" },
             movements: {
               type: Type.ARRAY,
               items: {

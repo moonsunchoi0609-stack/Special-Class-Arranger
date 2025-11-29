@@ -193,18 +193,21 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {classDetails.map((cls) => (
                         <div key={cls.classId} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
-                            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                                <h4 className="text-lg font-bold text-gray-800">{cls.classId}</h4>
-                                <div className="flex gap-2 text-xs font-bold">
-                                    <span className={`px-2 py-1 rounded bg-red-100 text-red-700`}>Risk: {cls.riskScore}</span>
-                                    <span className={`px-2 py-1 rounded bg-blue-100 text-blue-700`}>Bal: {cls.balanceScore}</span>
+                            <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-100">
+                                <h4 className="text-lg font-bold text-gray-800 mt-1">
+                                    {cls.classId.replace(/반$/, '')}반
+                                </h4>
+                                <div className="flex flex-col items-end gap-1.5">
+                                    <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">
+                                        {cls.statusTitle}
+                                    </span>
+                                    <div className="flex gap-2 text-xs font-bold">
+                                        <span className={`px-2 py-1 rounded bg-red-100 text-red-700`}>Risk: {cls.riskScore}</span>
+                                        <span className={`px-2 py-1 rounded bg-blue-100 text-blue-700`}>Bal: {cls.balanceScore}</span>
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <div>
-                                    <h5 className="text-xs font-bold text-gray-400 uppercase mb-1">상태 요약</h5>
-                                    <p className="text-sm font-semibold text-gray-800">{cls.statusTitle}</p>
-                                </div>
                                 <div>
                                     <h5 className="text-xs font-bold text-gray-400 uppercase mb-1">현황</h5>
                                     <p className="text-sm text-gray-600 leading-snug">{cls.currentSituation}</p>
@@ -303,11 +306,13 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                                                     <div className="flex-1 flex items-center justify-center px-2">
                                                         <div className="flex items-center gap-2 text-sm font-medium w-full max-w-[200px]">
                                                             <div className="flex-1 text-center py-1 bg-white border border-gray-200 rounded text-gray-600">
-                                                                {move.currentClass || '미배정'}
+                                                                {(move.currentClass && move.currentClass !== '미배정') 
+                                                                    ? `${move.currentClass.replace(/반$/, '')}반` 
+                                                                    : '미배정'}
                                                             </div>
                                                             <ArrowRight size={16} className="text-gray-400 flex-shrink-0" />
                                                             <div className="flex-1 text-center py-1 bg-indigo-600 text-white rounded shadow-sm">
-                                                                {move.targetClass}반
+                                                                {move.targetClass.replace(/반$/, '')}반
                                                             </div>
                                                         </div>
                                                     </div>
