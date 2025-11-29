@@ -1,10 +1,9 @@
-
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Student, TagDefinition, SeparationRule, SchoolLevel, AiAnalysisResult } from '../types';
 import { MAX_CAPACITY } from '../constants';
 
 // 이름 마스킹 헬퍼 함수
-const maskName = (name: string): string => {
+export const maskName = (name: string): string => {
   if (!name) return '';
   if (name.length <= 1) return name;
   if (name.length === 2) return name[0] + '○';
@@ -70,10 +69,28 @@ export const analyzeClasses = async (
       recommendations: {
         type: Type.ARRAY,
         items: { type: Type.STRING },
-        description: "개선이 필요한 구체적인 제안 사항들 (미배정 학생 배치 제안 포함)."
+        description: "개선이 필요한 일반적인 제안 사항들."
+      },
+      suggestedMoves: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            studentName: { type: Type.STRING, description: "이동 대상 학생의 이름 (제공된 마스킹된 이름 그대로 사용)" },
+            currentClass: { type: Type.STRING, description: "현재 반 (또는 미배정)" },
+            targetClass: { type: Type.STRING, description: "이동할 목표 반" },
+            reason: { type: Type.STRING, description: "이동 제안 사유" }
+          },
+          required: ["studentName", "currentClass", "targetClass", "reason"]
+        },
+        description: "균형을 맞추기 위해 이동이 필요한 학생들의 구체적인 리스트. (이동이 불필요하면 빈 배열)"
+      },
+      predictedScore: {
+        type: Type.NUMBER,
+        description: "위의 suggestedMoves를 모두 적용했을 때 예상되는 전체 균형 점수."
       }
     },
-    required: ["overallScore", "overallComment", "classes", "recommendations"]
+    required: ["overallScore", "overallComment", "classes", "recommendations", "suggestedMoves"]
   };
 
   let prompt = `
@@ -125,7 +142,9 @@ export const analyzeClasses = async (
     **필수 요청 사항:**
     1. Risk Score: 0~100점. 공격성이나 지원 요구가 많은 학생이 몰릴수록 높게 책정.
     2. Balance Score: 0~100점. 성비, 학생 수, 성향이 골고루 섞일수록 높게 책정.
-    3. recommendations: 구체적인 학생 이동 제안이나 주의사항.
+    3. recommendations: 전반적인 개선 방향 제안.
+    4. **최적화 제안(suggestedMoves)**: 현재 편성이 최적화되지 않았다면, 점수를 높이기 위한 구체적인 학생 이동 제안 리스트를 작성해주세요. 학생 이름은 제공된 마스킹 이름을 그대로 사용하세요. (최적 상태라면 빈 배열)
+    5. **예상 점수(predictedScore)**: 제안된 이동을 적용했을 때 예상되는 개선된 전체 점수.
   `;
 
   try {

@@ -1,10 +1,11 @@
+
 import React from 'react';
-import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Wand2, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, User } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { AiAnalysisResult, Student, TagDefinition } from '../types';
+import { TagBadge } from './TagBadge';
 
 interface AiReportModalProps {
   isOpen: boolean;
@@ -13,6 +14,14 @@ interface AiReportModalProps {
   students?: Student[];
   tags?: TagDefinition[];
 }
+
+// Local helper to match mask logic from service
+const maskName = (name: string): string => {
+  if (!name) return '';
+  if (name.length <= 1) return name;
+  if (name.length === 2) return name[0] + '○';
+  return name[0] + '○' + name.slice(2);
+};
 
 export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, analysisResult, students, tags }) => {
   if (!isOpen || !analysisResult) return null;
@@ -56,7 +65,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
   }
 
   // Render Logic for Structured Data
-  const { overallScore, overallComment, classes, recommendations } = analysisResult;
+  const { overallScore, overallComment, classes, recommendations, suggestedMoves, predictedScore } = analysisResult;
 
   // Chart Data Preparation
   const barChartData = classes.map(c => ({
@@ -65,11 +74,11 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
     Balance: c.balanceScore
   }));
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
-    if (score >= 40) return 'text-amber-600 bg-amber-50 border-amber-200';
-    return 'text-red-600 bg-red-50 border-red-200';
+  // Helper to find original student by masked name (best effort)
+  const getOriginalStudent = (maskedName: string) => {
+      if (!students) return undefined;
+      // Try to find a student whose masked name matches
+      return students.find(s => maskName(s.name) === maskedName);
   };
 
   return (
@@ -88,14 +97,14 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-6 space-y-8">
             
-            {/* Top Section: Overall Score & Comment */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* 1. Overall Balance & Evaluation */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Score Card */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center relative overflow-hidden min-h-[180px]">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                    <h3 className="text-gray-500 font-medium mb-2 uppercase tracking-wide text-xs">전체 균형 점수</h3>
+                    <h3 className="text-gray-500 font-medium mb-4 uppercase tracking-wide text-xs">전체 균형 점수</h3>
                     <div className="relative flex items-center justify-center">
                         <svg className="w-32 h-32 transform -rotate-90">
                             <circle cx="64" cy="64" r="56" stroke="#f3f4f6" strokeWidth="12" fill="none" />
@@ -117,69 +126,48 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                 </div>
 
                 {/* Comment Card */}
-                <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative">
+                <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-200 relative flex flex-col">
                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
                      <h3 className="text-gray-500 font-medium mb-3 uppercase tracking-wide text-xs flex items-center gap-1">
                         <TrendingUp size={14} /> 종합 평가
                      </h3>
-                     <p className="text-gray-700 leading-relaxed text-lg font-medium break-keep">
-                        "{overallComment}"
-                     </p>
+                     <div className="flex-1 flex items-center">
+                        <p className="text-gray-700 leading-relaxed text-lg font-medium break-keep">
+                            "{overallComment}"
+                        </p>
+                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* Middle Section: Charts & Recommendations */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                
-                {/* Class Comparison Chart */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <h3 className="text-gray-800 font-bold mb-6 flex items-center gap-2">
-                        <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
-                        반별 지표 비교
-                    </h3>
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} domain={[0, 100]} />
-                                <Tooltip 
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                    cursor={{fill: '#f9fafb'}}
-                                />
-                                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                                <Bar dataKey="Risk" name="지도 난이도(Risk)" fill="#f87171" radius={[4, 4, 0, 0]} barSize={20} />
-                                <Bar dataKey="Balance" name="균형 점수(Balance)" fill="#60a5fa" radius={[4, 4, 0, 0]} barSize={20} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+            {/* 2. Class Indicators (Chart) */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h3 className="text-gray-800 font-bold mb-6 flex items-center gap-2">
+                    <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
+                    반별 지표 비교
+                </h3>
+                <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} domain={[0, 100]} />
+                            <Tooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                cursor={{fill: '#f9fafb'}}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                            <Bar dataKey="Risk" name="지도 난이도(Risk)" fill="#f87171" radius={[4, 4, 0, 0]} barSize={30} />
+                            <Bar dataKey="Balance" name="균형 점수(Balance)" fill="#60a5fa" radius={[4, 4, 0, 0]} barSize={30} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
+            </section>
 
-                {/* Recommendations List */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
-                    <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
-                        <div className="w-1 h-5 bg-amber-500 rounded-full"></div>
-                        AI 제안 사항
-                    </h3>
-                    <div className="flex-1 overflow-y-auto pr-2 space-y-3 max-h-64 custom-scrollbar">
-                        {recommendations.map((rec, idx) => (
-                            <div key={idx} className="flex gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100 hover:bg-amber-50 transition-colors">
-                                <CheckCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
-                                <p className="text-sm text-gray-700 leading-snug">{rec}</p>
-                            </div>
-                        ))}
-                        {recommendations.length === 0 && (
-                            <div className="text-center text-gray-400 py-10">특별한 제안 사항이 없습니다.</div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom Section: Class Details Cards */}
-            <div>
+            {/* 3. Current Class Detailed Analysis */}
+            <section>
                 <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2 px-1">
                     <div className="w-1 h-5 bg-gray-500 rounded-full"></div>
-                    학급별 상세 분석
+                    현재 학급별 상세 분석
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {classes.map((cls) => (
@@ -197,7 +185,119 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, a
                         </div>
                     ))}
                 </div>
-            </div>
+            </section>
+
+            {/* 4. AI Recommendations */}
+            <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <h3 className="text-gray-800 font-bold mb-4 flex items-center gap-2">
+                    <div className="w-1 h-5 bg-amber-500 rounded-full"></div>
+                    AI 제안 사항
+                </h3>
+                <div className="space-y-3">
+                    {recommendations.map((rec, idx) => (
+                        <div key={idx} className="flex gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100 hover:bg-amber-50 transition-colors">
+                            <CheckCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={18} />
+                            <p className="text-sm text-gray-700 leading-snug">{rec}</p>
+                        </div>
+                    ))}
+                    {recommendations.length === 0 && (
+                        <div className="text-center text-gray-400 py-4">특별한 제안 사항이 없습니다.</div>
+                    )}
+                </div>
+            </section>
+
+            {/* 5. AI Suggested Assignment Analysis (Moves) */}
+            <section className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h3 className="text-gray-800 font-bold text-lg flex items-center gap-2">
+                        <Wand2 className="text-indigo-600" size={20} />
+                        AI가 제안한 편성안 분석
+                    </h3>
+                    {predictedScore && (
+                        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-indigo-100">
+                            <span className="text-xs font-bold text-gray-500 uppercase">예상 균형 점수</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-400 line-through text-sm">{overallScore}</span>
+                                <ArrowRight size={14} className="text-gray-400" />
+                                <span className={`text-xl font-black ${predictedScore > overallScore ? 'text-green-600' : 'text-gray-800'}`}>
+                                    {predictedScore}
+                                </span>
+                                {predictedScore > overallScore && (
+                                    <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                                        +{predictedScore - overallScore}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {suggestedMoves && suggestedMoves.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {suggestedMoves.map((move, idx) => {
+                            const originalStudent = getOriginalStudent(move.studentName);
+                            return (
+                                <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100 flex flex-col gap-3 relative overflow-hidden group hover:shadow-md transition-all">
+                                    {/* Decoration */}
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                    
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
+                                                <User size={16} />
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-gray-800 flex items-center gap-2">
+                                                    {move.studentName}
+                                                    {originalStudent && originalStudent.gender && (
+                                                        <span className={`text-[10px] px-1.5 rounded-full ${originalStudent.gender === 'male' ? 'bg-blue-100 text-blue-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                            {originalStudent.gender === 'male' ? '남' : '여'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {/* Tags */}
+                                                {originalStudent && tags && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {originalStudent.tagIds.map(tid => {
+                                                            const t = tags.find(tag => tag.id === tid);
+                                                            return t ? (
+                                                                <span key={t.id} className={`text-[10px] px-1.5 py-0.5 rounded ${t.colorBg} ${t.colorText}`}>
+                                                                    {t.label}
+                                                                </span>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Movement Visualization */}
+                                    <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg text-sm">
+                                        <div className="flex-1 text-center font-bold text-gray-500 bg-white border border-gray-200 rounded py-1">
+                                            {move.currentClass || '미배정'}
+                                        </div>
+                                        <ArrowRight size={16} className="text-indigo-400" />
+                                        <div className="flex-1 text-center font-bold text-white bg-indigo-500 rounded py-1 shadow-sm">
+                                            {move.targetClass}
+                                        </div>
+                                    </div>
+
+                                    <p className="text-xs text-gray-600 italic bg-gray-50 p-2 rounded">
+                                        "{move.reason}"
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="text-center py-8 bg-white/50 rounded-xl border border-dashed border-gray-300">
+                        <CheckCircle className="mx-auto text-green-500 mb-2" size={32} />
+                        <p className="text-gray-600 font-medium">현재 편성이 최적 상태입니다.</p>
+                        <p className="text-sm text-gray-400">추가적인 이동 제안이 없습니다.</p>
+                    </div>
+                )}
+            </section>
 
             <div className="mt-8 text-center text-xs text-gray-400">
                 ※ 본 분석 결과는 AI에 의해 생성되었으며, 참고용으로만 활용해 주시기 바랍니다. 최종 결정은 학교의 상황을 고려하여 진행해 주세요.
