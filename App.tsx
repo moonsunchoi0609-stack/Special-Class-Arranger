@@ -11,7 +11,7 @@ import {
     Student, TagDefinition, SchoolLevel, SeparationRule, AppState 
 } from './types';
 import { 
-    INITIAL_TAGS, TAG_COLORS, UNASSIGNED_ID
+    INITIAL_TAGS, TAG_COLORS,UNASSIGNED_ID, MAX_CAPACITY
 } from './constants';
 import { ClassColumn } from './components/ClassColumn';
 import { TagBadge } from './components/TagBadge';
@@ -405,44 +405,61 @@ function App() {
     
     saveHistory();
 
-    const sampleData = [
-        { name: "강민우", gender: "male", tags: ["t3"] }, // 공격성
-        { name: "김서연", gender: "female", tags: [] },
-        { name: "박준호", gender: "male", tags: ["t2", "t9"] }, // 휠체어, 화장실지원
-        { name: "이진아", gender: "female", tags: ["t5"] }, // 교사보조가능
-        { name: "정현수", gender: "male", tags: ["t4"] }, // 잦은결석
-        { name: "최수민", gender: "female", tags: ["t6"] }, // 학부모예민
-        { name: "조민재", gender: "male", tags: [] },
-        { name: "윤서윤", gender: "female", tags: ["t1", "t8"] }, // 기저귀, 분쇄식
-        { name: "장동현", gender: "male", tags: ["t3", "t10"] }, // 공격성, 보행지원
-        { name: "임지원", gender: "female", tags: [] },
-        { name: "한승우", gender: "male", tags: ["t5"] },
-        { name: "오하은", gender: "female", tags: ["t7"] }, // 베드사용
-        { name: "서준영", gender: "male", tags: [] },
-        { name: "신혜진", gender: "female", tags: ["t4"] },
-        { name: "권영민", gender: "male", tags: ["t3"] },
-        { name: "황지현", gender: "female", tags: ["t9"] },
-        { name: "안재석", gender: "male", tags: ["t2"] },
-        { name: "송예린", gender: "female", tags: ["t6"] },
-        { name: "전상우", gender: "male", tags: [] },
-        { name: "홍유진", gender: "female", tags: ["t5"] },
-    ];
+    const capacityPerClass = MAX_CAPACITY[schoolLevel];
+    const totalCount = classCount * capacityPerClass;
 
-    const newStudents: Student[] = sampleData.map((d, i) => ({
-        id: `sample-${Date.now()}-${i}`,
-        name: d.name,
-        gender: d.gender as 'male' | 'female',
-        tagIds: d.tags,
-        assignedClassId: null
-    }));
+    // Name pools
+    const lastNames = ["김", "이", "박", "최", "정", "강", "조", "윤", "장", "임", "한", "오", "서", "신", "권", "황", "안", "송", "전", "홍", "문", "손", "배", "백", "허"];
+    const firstNames = ["민준", "서준", "도윤", "예준", "시우", "하준", "지호", "주원", "지후", "준우", "서윤", "서연", "지우", "지유", "하윤", "서현", "민서", "하은", "지아", "수아", "은지", "지원", "현우", "민재", "채원", "다은", "가은", "준영", "현준", "예은", "유진", "시현", "건우", "우진", "민규", "예원", "윤우", "서아", "연우", "하율", "다인", "연주", "승우", "지민", "유나", "가윤", "시은", "준호", "동현"];
 
-    setStudents(newStudents);
+    const generatedStudents: Student[] = [];
+    const usedNames = new Set<string>();
+
+    for (let i = 0; i < totalCount; i++) {
+        // Generate Name
+        let name = "";
+        let attempts = 0;
+        while (attempts < 50) {
+             const ln = lastNames[Math.floor(Math.random() * lastNames.length)];
+             const fn = firstNames[Math.floor(Math.random() * firstNames.length)];
+             const candidate = ln + fn;
+             if (!usedNames.has(candidate)) {
+                 name = candidate;
+                 break;
+             }
+             attempts++;
+        }
+        if (!name) name = `학생${i+1}`; // Fallback
+        usedNames.add(name);
+
+        // Generate Gender
+        const gender: 'male' | 'female' = Math.random() > 0.5 ? 'male' : 'female';
+
+        // Generate Tags (Weighted random)
+        // 15% no tags, 55% 1 tag, 30% 2 tags (Total with tags: 85% > 80%)
+        const rand = Math.random();
+        let tagCount = 0;
+        if (rand > 0.7) tagCount = 2; // 30%
+        else if (rand > 0.15) tagCount = 1; // 55%
+        // else 0 tags (15%)
+
+        const shuffledTags = [...INITIAL_TAGS].sort(() => 0.5 - Math.random());
+        const selectedTagIds = shuffledTags.slice(0, tagCount).map(t => t.id);
+
+        generatedStudents.push({
+            id: `sample-${Date.now()}-${i}`,
+            name,
+            gender,
+            tagIds: selectedTagIds,
+            assignedClassId: null
+        });
+    }
+
+    setStudents(generatedStudents);
     setSeparationRules([]);
-    setSchoolLevel('ELEMENTARY_MIDDLE');
-    setClassCount(3);
-    setTags(INITIAL_TAGS); // Reset tags to ensure IDs match
+    setTags(INITIAL_TAGS); 
     
-    alert("샘플 데이터가 로드되었습니다. 드래그 앤 드롭으로 반편성을 체험해보세요.");
+    alert(`현재 설정(${schoolLevel === 'ELEMENTARY_MIDDLE' ? '초/중등' : '고등'}, ${classCount}학급)에 맞춰 ${totalCount}명의 샘플 데이터가 생성되었습니다.`);
   };
 
   const handleSaveProject = () => {
@@ -851,10 +868,10 @@ function App() {
                         />
                          <button 
                             onClick={handleLoadSampleData}
-                            className="col-span-2 bg-white border border-gray-300 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 text-gray-700 py-2 px-2 rounded text-xs font-boldMZ flex items-center justify-center gap-2 transition-all mt-1"
+                            className="col-span-2 bg-white border border-gray-300 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 text-gray-700 py-2 px-2 rounded text-xs font-bold flex items-center justify-center gap-2 transition-all mt-1"
                         >
                             <Database size={16} />
-                            Sample 데이터 자동입력
+                            샘플 데이터 자동입력
                         </button>
                     </div>
 
