@@ -119,7 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <input 
                   type="range" min="1" max="5" 
                   value={classCount} 
-                  onMouseDown={saveHistory} // Snapshot before drag
+                  onMouseDown={saveHistory} 
+                  onTouchStart={saveHistory}
                   onChange={(e) => setClassCount(Number(e.target.value))}
                   className="w-full accent-indigo-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                 />

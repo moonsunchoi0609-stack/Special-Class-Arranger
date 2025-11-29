@@ -37,15 +37,28 @@ const SimulationView: React.FC<{
   // Logic to calculate simulated state
   const { simulatedStudents, movedStudentIds } = useMemo(() => {
     const movedIds = new Set<string>();
-    const mapping = new Map<string, string>(); // maskedName -> targetClassId
+    const mapping = new Map<string, string>(); // studentId -> targetClassId
 
     movements.forEach(m => {
         // Normalize class ID (e.g., "1반" -> "1")
         const targetId = m.targetClass.replace(/[^0-9]/g, '');
-        mapping.set(m.studentName, targetId);
+        
+        // Use ID if available, otherwise fall back to name mapping
+        if (m.studentId) {
+            mapping.set(m.studentId, targetId);
+        } else {
+            mapping.set(m.studentName, targetId);
+        }
     });
 
     const newStudents = students.map(s => {
+      // 1. Check ID match (Primary)
+      if (mapping.has(s.id)) {
+        movedIds.add(s.id);
+        return { ...s, assignedClassId: mapping.get(s.id)! };
+      }
+      
+      // 2. Check Masked Name match (Fallback for legacy)
       const masked = maskName(s.name);
       if (mapping.has(masked)) {
         movedIds.add(s.id);
@@ -108,7 +121,7 @@ const SimulationView: React.FC<{
                                 if (isMoved) {
                                     // We need to find the movement that caused this
                                     const masked = maskName(s.name);
-                                    const move = movements.find(m => m.studentName === masked);
+                                    const move = movements.find(m => m.studentId === s.id || m.studentName === masked);
                                     if (move) {
                                         const fromClass = move.currentClass.replace(/반$/, '');
                                         movementLabel = `변경 전: ${fromClass}반`;
@@ -125,7 +138,7 @@ const SimulationView: React.FC<{
                                     `}>
                                         <div className="flex justify-between items-start mb-1">
                                             <span className={`font-bold ${isMoved ? 'text-indigo-900' : 'text-slate-800'}`}>
-                                                {s.name}
+                                                {maskName(s.name)}
                                             </span>
                                             {isMoved && (
                                                 <span className="text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
@@ -462,7 +475,12 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                         {/* Movements List */}
                                         <div className="space-y-3 mb-5">
                                             {sug.movements.map((move, mIdx) => {
-                                                const originalStudent = getOriginalStudent(move.studentName);
+                                                // Find original student: Try ID first, then fallback to name
+                                                let originalStudent = students?.find(s => s.id === move.studentId);
+                                                if (!originalStudent) {
+                                                    originalStudent = getOriginalStudent(move.studentName);
+                                                }
+
                                                 return (
                                                     <div key={mIdx} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                                         
@@ -477,7 +495,7 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({
                                                             </div>
                                                             <div>
                                                                 <div className="font-bold text-gray-900 text-sm">
-                                                                    {move.studentName}
+                                                                    {maskName(originalStudent?.name || move.studentName)}
                                                                 </div>
                                                                 {/* Tags */}
                                                                 {originalStudent && tags && (

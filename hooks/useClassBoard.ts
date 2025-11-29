@@ -13,6 +13,9 @@ export const useClassBoard = () => {
   // History State
   const [history, setHistory] = useState<{ past: AppState[]; future: AppState[] }>({ past: [], future: [] });
 
+  // Loading State to prevent overwrite
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // --- PERSISTENCE ---
   useEffect(() => {
     const saved = localStorage.getItem('classHelperData');
@@ -34,12 +37,14 @@ export const useClassBoard = () => {
         console.error("Failed to load data", e);
       }
     }
+    setIsInitialized(true);
   }, []);
 
   useEffect(() => {
+    if (!isInitialized) return;
     const data: AppState = { schoolLevel, classCount, students, tags, separationRules };
     localStorage.setItem('classHelperData', JSON.stringify(data));
-  }, [schoolLevel, classCount, students, tags, separationRules]);
+  }, [schoolLevel, classCount, students, tags, separationRules, isInitialized]);
 
   // --- HISTORY MANAGEMENT ---
   const saveHistory = useCallback(() => {

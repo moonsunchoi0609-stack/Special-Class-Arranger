@@ -73,11 +73,12 @@ export const analyzeClasses = async (
               items: {
                 type: Type.OBJECT,
                 properties: {
+                    studentId: { type: Type.STRING, description: "학생의 고유 ID (제공된 정보의 [ID:...] 값)" },
                     studentName: { type: Type.STRING, description: "이동할 학생 이름 (마스킹됨)" },
                     currentClass: { type: Type.STRING },
                     targetClass: { type: Type.STRING }
                 },
-                required: ["studentName", "currentClass", "targetClass"]
+                required: ["studentId", "studentName", "currentClass", "targetClass"]
               },
               description: "이 제안을 위해 이동해야 하는 학생 명단. 맞교환인 경우 2명 이상의 이동을 포함."
             },
@@ -97,7 +98,7 @@ export const analyzeClasses = async (
 
   let prompt = `
     당신은 20년 경력의 **특수교육 베테랑 교사**이자 반편성 컨설턴트입니다.
-    제공된 학생 데이터, 태그, 규칙을 분석하여 **현실적이고 구체적인 해결책**을 JSON 포맷으로 리포트를 작성해주세요.
+    제공된 학생 데이터(이름은 마스킹됨, ID 포함), 태그, 규칙을 분석하여 **현실적이고 구체적인 해결책**을 JSON 포맷으로 리포트를 작성해주세요.
 
     **분석 목표:**
     1. **정원 준수 가이드:**
@@ -126,19 +127,23 @@ export const analyzeClasses = async (
       [${classId}반] (남:${maleCount}, 여:${femaleCount}, 총:${classStudents.length})
       명단: ${classStudents.map(s => {
         const tagsStr = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-        return `${maskName(s.name)}(${s.gender === 'female' ? '여' : '남'}, ${tagsStr})`;
+        return `[ID:${s.id}] ${maskName(s.name)}(${s.gender === 'female' ? '여' : '남'}, ${tagsStr})`;
       }).join(' / ')}
     `;
     }).join('\n')}
 
-    **미배정:** ${unassigned.map(s => maskName(s.name)).join(', ') || '없음'}
-    **분리규칙:** ${rules.map(r => r.studentIds.map(id => students.find(s => s.id === id)?.name).join(', ')).join(' / ') || '없음'}
+    **미배정:** ${unassigned.map(s => `[ID:${s.id}] ${maskName(s.name)}`).join(', ') || '없음'}
+    **분리규칙:** ${rules.map(r => r.studentIds.map(id => {
+        const s = students.find(student => student.id === id);
+        return s ? `[ID:${s.id}] ${maskName(s.name)}` : 'Unknown';
+    }).join(', ')).join(' / ') || '없음'}
 
     **작성 가이드:**
     1. **suggestions**: 
        - 전체 균형을 개선할 수 있는 **가장 효과적인 단 하나의 제안(1개)**만 작성하세요. 여러 선택지를 제공하지 마세요.
        - 이미 정원(${limit}명)이 찼거나 초과된 반으로 학생을 보낼 때는 반드시 **맞교환(Trade)** 방식을 제안하여, 해당 반의 인원이 현재보다 더 늘어나지 않도록 하세요.
        - 하나의 제안(item) 내에 관련된 모든 학생의 이동(movements)을 배열로 포함시키세요.
+       - **중요:** 이동 목록(movements) 작성 시 반드시 해당 학생의 **[ID:...] 값(studentId)**을 정확히 포함해야 합니다.
        - 각 제안별로 그 제안만 수행했을 때의 예상 점수(predictedScore)를 계산하여 포함하세요.
     2. **Scores**: 현재 점수와 개선 후 점수를 논리적으로 산정하세요.
   `;

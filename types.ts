@@ -30,6 +30,7 @@ export interface AppState {
 
 // AI Analysis Types
 export interface AiMovement {
+  studentId: string;
   studentName: string;
   currentClass: string;
   targetClass: string;
