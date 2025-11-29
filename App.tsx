@@ -41,6 +41,7 @@ function App() {
   
   const [editingStudent, setEditingStudent] = useState<Student | null>(null); // If null, adding new
   const [studentFormName, setStudentFormName] = useState('');
+  const [studentFormGender, setStudentFormGender] = useState<'male' | 'female'>('male');
   const [studentFormTags, setStudentFormTags] = useState<string[]>([]);
   const [showStudentModal, setShowStudentModal] = useState(false);
   
@@ -80,7 +81,14 @@ function App() {
         const parsed: AppState = JSON.parse(saved);
         setSchoolLevel(parsed.schoolLevel);
         setClassCount(parsed.classCount);
-        setStudents(parsed.students);
+        
+        // Data Migration: Ensure all students have a gender
+        const migratedStudents = (parsed.students || []).map(s => ({
+            ...s,
+            gender: s.gender || 'male' // Default to male if missing
+        }));
+        setStudents(migratedStudents);
+        
         setTags(parsed.tags);
         setSeparationRules(parsed.separationRules);
       } catch (e) {
@@ -176,10 +184,12 @@ function App() {
     if (student) {
         setEditingStudent(student);
         setStudentFormName(student.name);
+        setStudentFormGender(student.gender || 'male');
         setStudentFormTags(student.tagIds);
     } else {
         setEditingStudent(null);
         setStudentFormName('');
+        setStudentFormGender('male');
         setStudentFormTags([]);
     }
     setShowStudentModal(true);
@@ -193,13 +203,14 @@ function App() {
     if (editingStudent) {
         setStudents(prev => prev.map(s => 
             s.id === editingStudent.id 
-                ? { ...s, name: studentFormName, tagIds: studentFormTags }
+                ? { ...s, name: studentFormName, gender: studentFormGender, tagIds: studentFormTags }
                 : s
         ));
     } else {
         const newStudent: Student = {
             id: Date.now().toString(),
             name: studentFormName,
+            gender: studentFormGender,
             tagIds: studentFormTags,
             assignedClassId: null // Start unassigned
         };
@@ -425,7 +436,14 @@ function App() {
                   saveHistory(); // History
                   setSchoolLevel(json.schoolLevel || 'ELEMENTARY_MIDDLE');
                   setClassCount(json.classCount || 3);
-                  setStudents(json.students || []);
+                  
+                  // Ensure gender field exists for loaded data
+                  const loadedStudents = (json.students || []).map((s: any) => ({
+                      ...s,
+                      gender: s.gender || 'male'
+                  }));
+                  setStudents(loadedStudents);
+                  
                   setTags(json.tags || INITIAL_TAGS);
                   setSeparationRules(json.separationRules || []);
                   alert("성공적으로 불러왔습니다.");
@@ -475,7 +493,7 @@ function App() {
 
       // 1. 시트1: 반편성 결과
       const assignmentData: any[][] = [
-          ['반', '이름', '특성 Tag']
+          ['반', '이름', '성별', '특성 Tag']
       ];
 
       // Class Assignment List (가나다 순 정렬)
@@ -484,11 +502,12 @@ function App() {
               .filter(s => s.assignedClassId === i.toString())
               .sort(koreanSort);
           if (classStudents.length === 0) {
-              assignmentData.push([`${i}반`, '배정된 학생 없음', '']);
+              assignmentData.push([`${i}반`, '배정된 학생 없음', '', '']);
           } else {
               classStudents.forEach((s) => {
                   const sTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-                  assignmentData.push([`${i}반`, s.name, sTags]);
+                  const genderStr = s.gender === 'female' ? '여' : '남';
+                  assignmentData.push([`${i}반`, s.name, genderStr, sTags]);
               });
           }
       }
@@ -500,7 +519,8 @@ function App() {
       if (unassigned.length > 0) {
           unassigned.forEach((s) => {
               const sTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-              assignmentData.push(['미배정', s.name, sTags]);
+              const genderStr = s.gender === 'female' ? '여' : '남';
+              assignmentData.push(['미배정', s.name, genderStr, sTags]);
           });
       }
 
@@ -510,6 +530,7 @@ function App() {
       assignmentSheet['!cols'] = [
           { wch: 12 },  // 반
           { wch: 15 },  // 이름
+          { wch: 8 },   // 성별
           { wch: 40 }   // 특성 Tag
       ];
       
@@ -529,6 +550,22 @@ function App() {
               return `${count}명`;
           })];
           statsData.push(totalRow);
+
+          // Gender Stats
+          const maleRow = ['남학생', ...Array.from({ length: classCount }, (_, i) => {
+             const count = students.filter(s => s.assignedClassId === (i + 1).toString() && s.gender === 'male').length;
+             return `${count}명`;
+          })];
+          statsData.push(maleRow);
+
+          const femaleRow = ['여학생', ...Array.from({ length: classCount }, (_, i) => {
+             const count = students.filter(s => s.assignedClassId === (i + 1).toString() && s.gender === 'female').length;
+             return `${count}명`;
+          })];
+          statsData.push(femaleRow);
+
+          // Spacer
+          statsData.push([]);
 
           // Each Tag Row
           tags.forEach(tag => {
@@ -1058,6 +1095,35 @@ function App() {
                         />
                     </div>
                     
+                    {/* Gender Selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer p-2 border rounded-lg hover:bg-blue-50 transition-colors border-gray-200 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 flex-1">
+                                <input 
+                                    type="radio" 
+                                    name="gender" 
+                                    value="male" 
+                                    checked={studentFormGender === 'male'} 
+                                    onChange={() => setStudentFormGender('male')}
+                                    className="w-4 h-4 text-blue-600" 
+                                />
+                                <span className="text-sm font-medium text-gray-700">남학생</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer p-2 border rounded-lg hover:bg-rose-50 transition-colors border-gray-200 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50 flex-1">
+                                <input 
+                                    type="radio" 
+                                    name="gender" 
+                                    value="female" 
+                                    checked={studentFormGender === 'female'} 
+                                    onChange={() => setStudentFormGender('female')}
+                                    className="w-4 h-4 text-rose-600" 
+                                />
+                                <span className="text-sm font-medium text-gray-700">여학생</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <label className="block text-sm font-medium text-gray-700">특성 Tag (선택)</label>

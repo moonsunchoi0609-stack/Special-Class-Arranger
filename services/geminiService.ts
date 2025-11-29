@@ -18,8 +18,7 @@ export const analyzeClasses = async (
   classCount: number,
   schoolLevel: SchoolLevel
 ): Promise<string> => {
-  // Decode the API key at runtime using the browser's atob function
-  const apiKey = __API_KEY_B64__ ? atob(__API_KEY_B64__) : '';
+  const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
     return "🚫 **API 키 미설정**\n\n시스템 설정에서 API 키를 확인할 수 없습니다. 관리자에게 문의하거나 네트워크 상태를 확인해주세요.";
@@ -50,18 +49,24 @@ export const analyzeClasses = async (
        - '교사보조가능': 교사의 지시를 잘 따르거나 또래 도움을 줄 수 있어 학급 운영에 도움이 됩니다.
        - 따라서, 이 Tag를 가진 학생들은 행동 중재가 많이 필요한 학생(공격성 등)이 있는 반에 배치하여 균형을 맞추는 것이 좋습니다.
     2. **부담 가중 요소**: 그 외의 Tag(예: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등)는 교사의 물리적, 심리적 지원이 많이 필요한 요소입니다. 한 반에 과도하게 몰리지 않도록 해야 합니다.
+    3. **성별 균형**: 가능하다면 각 반의 남녀 성비가 고르게 분포되는 것이 좋습니다. 특정 성별이 한 반에 과도하게 쏠리지 않았는지 확인해주세요.
 
     **현재 편성 현황:**
-    ${Object.entries(classesMap).map(([classId, classStudents]) => `
-      [${classId}반] (총 ${classStudents.length}명)
+    ${Object.entries(classesMap).map(([classId, classStudents]) => {
+        const maleCount = classStudents.filter(s => s.gender === 'male').length;
+        const femaleCount = classStudents.filter(s => s.gender === 'female').length;
+        return `
+      [${classId}반] (총 ${classStudents.length}명 - 남:${maleCount} / 여:${femaleCount})
       학생들: ${classStudents.map(s => {
         const studentTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-        return `${maskName(s.name)}(${studentTags})`;
+        const genderStr = s.gender === 'female' ? '여' : '남';
+        return `${maskName(s.name)}(${genderStr}, ${studentTags})`;
       }).join(' / ')}
-    `).join('\n')}
+    `;
+    }).join('\n')}
 
     **미배정 학생:**
-    ${unassigned.map(s => maskName(s.name)).join(', ') || '없음'}
+    ${unassigned.map(s => `${maskName(s.name)}(${s.gender === 'female' ? '여' : '남'})`).join(', ') || '없음'}
 
     **분리 배정 규칙(서로 같은 반이 되면 안됨):**
     ${rules.map((r, idx) => {
@@ -79,15 +84,16 @@ export const analyzeClasses = async (
     **요청 사항:**
     1. 각 반의 **'실질적인 지도 난이도'**의 균형이 맞는지 확인하세요. (학생 수는 무조건 정원에 맞춰지므로 **학생 수 균형은 고려하지 마세요**. 오직 '부담 경감/가중 요소'를 바탕으로 한 업무 강도 균형만 판단하세요.)
     2. 특정 반에 부담 가중 요소(예: 공격성, 휠체어 등)가 과도하게 몰려 교사의 부담이 크지 않은지 확인하세요.
-    3. 분리 배정 규칙 위반 여부를 다시 한 번 체크하세요.
-    4. 미배정 학생이 있다면 어디로 배치하는 것이 좋을지 제안하세요.
-    5. **종합 분석 및 제안**: 다음 형식에 맞춰 작성해 주세요.
+    3. **성별 균형**이 적절한지 확인하고, 심각한 불균형이 있다면 지적해주세요.
+    4. 분리 배정 규칙 위반 여부를 다시 한 번 체크하세요.
+    5. 미배정 학생이 있다면 어디로 배치하는 것이 좋을지 제안하세요.
+    6. **종합 분석 및 제안**: 다음 형식에 맞춰 작성해 주세요.
        - **전체적인 개선 제안**: 현재 편성의 문제점과 해결 방안을 3~4문장으로 요약
        - **제안된 편성안 상세 분석**:
-         - **개선 효과**: 제안대로 변경 시 예상되는 긍정적 효과 (예: 교사 부담 완화, 학생 간 갈등 예방 등)
-         - **잔여 과제**: 여전히 해결되지 않거나 주의가 필요한 부분 (예: 특정 반의 과밀, 지원 인력 필요성 등)
-    6. 답변 시 학생 이름은 마스킹된 상태 그대로(예: 홍○동) 언급해 주세요.
-    7. **필수**: 답변의 맨 마지막 줄에 반드시 "※ 본 분석 결과는 참고용이며, 최종 결정은 학교의 상황을 고려하여 진행해 주시기 바랍니다."라는 문구를 포함하세요.
+         - **개선 효과**: 제안대로 변경 시 예상되는 긍정적 효과 (예: 교사 부담 완화, 성비 균형 개선 등)
+         - **잔여 과제**: 여전히 해결되지 않거나 주의가 필요한 부분
+    7. 답변 시 학생 이름은 마스킹된 상태 그대로(예: 홍○동) 언급해 주세요.
+    8. **필수**: 답변의 맨 마지막 줄에 반드시 "※ 본 분석 결과는 참고용이며, 최종 결정은 학교의 상황을 고려하여 진행해 주시기 바랍니다."라는 문구를 포함하세요.
   `;
 
   try {

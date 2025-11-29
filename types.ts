@@ -10,6 +10,7 @@ export interface TagDefinition {
 export interface Student {
   id: string;
   name: string;
+  gender: 'male' | 'female';
   tagIds: string[];
   assignedClassId: string | null; // null means 'Unassigned'
 }
@@ -17,11 +18,6 @@ export interface Student {
 export interface SeparationRule {
   id: string;
   studentIds: string[];
-}
-
-export interface ClassGroup {
-  id: string;
-  name: string;
 }
 
 export interface AppState {

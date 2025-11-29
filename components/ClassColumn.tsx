@@ -47,6 +47,11 @@ export const ClassColumn: React.FC<ClassColumnProps> = ({
     });
   }
 
+  // Count Genders
+  // Handle case where gender might be undefined for legacy data (though App.tsx handles migration, good to be safe)
+  const maleCount = students.filter(s => s.gender === 'male').length;
+  const femaleCount = students.filter(s => s.gender === 'female').length;
+
   // [수정됨] 학생 목록을 가나다순으로 정렬
   const sortedStudents = [...students].sort((a, b) => 
     a.name.localeCompare(b.name, 'ko')
@@ -86,29 +91,40 @@ export const ClassColumn: React.FC<ClassColumnProps> = ({
     >
       {/* Header */}
       <div className={`
-        p-3 border-b rounded-t-xl flex justify-between items-center
+        p-3 border-b rounded-t-xl flex flex-col gap-1
         ${isUnassigned ? 'bg-gray-100' : hasConflict ? 'bg-red-100' : 'bg-blue-50'}
       `}>
-        <h3 className={`font-bold ${hasConflict ? 'text-red-800' : 'text-gray-700'}`}>
-          {name}
-        </h3>
-        <div className="flex items-center gap-2">
-           {hasConflict && (
-              <span className="text-red-600 flex items-center text-xs font-bold" title="분리 배정 위반!">
-                <AlertCircle size={16} className="mr-1" /> 위반
-              </span>
-           )}
-           <span className={`
-             text-sm font-medium px-2 py-0.5 rounded-full
-             ${isOverCapacity 
-                ? 'bg-red-500 text-white' 
-                : students.length === maxCapacity 
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-700'}
-           `}>
-             {students.length} { !isUnassigned && `/ ${maxCapacity}`}
-           </span>
+        <div className="flex justify-between items-center">
+            <h3 className={`font-bold ${hasConflict ? 'text-red-800' : 'text-gray-700'}`}>
+            {name}
+            </h3>
+            <div className="flex items-center gap-2">
+            {hasConflict && (
+                <span className="text-red-600 flex items-center text-xs font-bold" title="분리 배정 위반!">
+                    <AlertCircle size={16} className="mr-1" /> 위반
+                </span>
+            )}
+            <span className={`
+                text-sm font-medium px-2 py-0.5 rounded-full
+                ${isOverCapacity 
+                    ? 'bg-red-500 text-white' 
+                    : students.length === maxCapacity 
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-700'}
+            `}>
+                {students.length} { !isUnassigned && `/ ${maxCapacity}`}
+            </span>
+            </div>
         </div>
+        
+        {/* Gender Ratio Display */}
+        {!isUnassigned && (
+            <div className="flex gap-2 text-xs font-medium">
+                <span className="text-blue-600 bg-blue-100/50 px-1.5 rounded">남: {maleCount}</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-rose-600 bg-rose-100/50 px-1.5 rounded">여: {femaleCount}</span>
+            </div>
+        )}
       </div>
 
       {/* Student List */}
