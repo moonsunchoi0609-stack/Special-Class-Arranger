@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Users, Plus, Settings, Wand2, Download, Trash2, 
-    X, CheckSquare, Square, RefreshCcw, Tag, FileDown,
-    Save, Upload, ChevronLeft, ChevronRight, HelpCircle
+    X, Square, RefreshCcw, Tag, FileDown,
+    Save, Upload, ChevronLeft, ChevronRight, HelpCircle,
+    Undo, Redo, CheckSquare
 } from 'lucide-react';
 
 import { 
@@ -29,6 +30,9 @@ function App() {
   const [tags, setTags] = useState<TagDefinition[]>(INITIAL_TAGS);
   const [separationRules, setSeparationRules] = useState<SeparationRule[]>([]);
   
+  // History State
+  const [history, setHistory] = useState<{ past: AppState[]; future: AppState[] }>({ past: [], future: [] });
+
   // UI State
   const [showStats, setShowStats] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -79,6 +83,81 @@ function App() {
     localStorage.setItem('classHelperData', JSON.stringify(data));
   }, [schoolLevel, classCount, students, tags, separationRules]);
 
+  // --- HISTORY MANAGEMENT (UNDO/REDO) ---
+  
+  const saveHistory = () => {
+    const current: AppState = { schoolLevel, classCount, students, tags, separationRules };
+    setHistory(prev => ({
+      past: [...prev.past, current],
+      future: []
+    }));
+  };
+
+  const undo = () => {
+    if (history.past.length === 0) return;
+    const previous = history.past[history.past.length - 1];
+    const newPast = history.past.slice(0, -1);
+    
+    // Save current to future
+    const current: AppState = { schoolLevel, classCount, students, tags, separationRules };
+    
+    setHistory({
+      past: newPast,
+      future: [current, ...history.future]
+    });
+    
+    // Restore
+    setSchoolLevel(previous.schoolLevel);
+    setClassCount(previous.classCount);
+    setStudents(previous.students);
+    setTags(previous.tags);
+    setSeparationRules(previous.separationRules);
+  };
+
+  const redo = () => {
+    if (history.future.length === 0) return;
+    const next = history.future[0];
+    const newFuture = history.future.slice(1);
+
+    // Save current to past
+    const current: AppState = { schoolLevel, classCount, students, tags, separationRules };
+    
+    setHistory(prev => ({
+      past: [...prev.past, current],
+      future: newFuture
+    }));
+
+    // Restore
+    setSchoolLevel(next.schoolLevel);
+    setClassCount(next.classCount);
+    setStudents(next.students);
+    setTags(next.tags);
+    setSeparationRules(next.separationRules);
+  };
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if focus is on an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [history, students, tags, separationRules, classCount, schoolLevel]);
+
 
   // --- HANDLERS: STUDENTS ---
   
@@ -98,6 +177,8 @@ function App() {
   const saveStudent = () => {
     if (!studentFormName.trim()) return;
     
+    saveHistory(); // History
+
     if (editingStudent) {
         setStudents(prev => prev.map(s => 
             s.id === editingStudent.id 
@@ -118,6 +199,7 @@ function App() {
 
   const deleteStudent = (id: string) => {
     if (window.confirm("정말 이 학생을 삭제하시겠습니까?")) {
+        saveHistory(); // History
         setStudents(prev => prev.filter(s => s.id !== id));
         // Also remove from rules
         setSeparationRules(prev => prev.map(r => ({
@@ -128,6 +210,7 @@ function App() {
   };
 
   const handleDropStudent = (studentId: string, targetClassId: string) => {
+      saveHistory(); // History
       setStudents(prev => prev.map(s => {
           if (s.id !== studentId) return s;
           // If dropping to unassigned, targetClassId is empty string or UNASSIGNED_ID logic check
@@ -148,6 +231,7 @@ function App() {
 
   const deleteTagDefinition = (tagId: string) => {
       if (window.confirm("이 Tag를 삭제하시겠습니까? 기존 학생들의 Tag도 사라집니다.")) {
+          saveHistory(); // History
           setTags(prev => prev.filter(t => t.id !== tagId));
           setStudents(prev => prev.map(s => ({
               ...s,
@@ -180,6 +264,8 @@ function App() {
               selectedColor = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
           }
 
+          saveHistory(); // History
+
           const newTag: TagDefinition = {
               id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               label: name,
@@ -195,7 +281,7 @@ function App() {
 
   const toggleSeparationSelect = (studentId: string) => {
       setSeparationSelection(prev => 
-        prev.includes(studentId)
+        prev.includes(studentId) 
             ? prev.filter(id => id !== studentId)
             : [...prev, studentId]
       );
@@ -206,6 +292,7 @@ function App() {
           alert("2명 이상의 학생을 선택해야 합니다.");
           return;
       }
+      saveHistory(); // History
       const newRule: SeparationRule = {
           id: `rule-${Date.now()}`,
           studentIds: separationSelection
@@ -216,6 +303,7 @@ function App() {
   };
 
   const deleteRule = (ruleId: string) => {
+      saveHistory(); // History
       setSeparationRules(prev => prev.filter(r => r.id !== ruleId));
   };
 
@@ -223,8 +311,13 @@ function App() {
 
   const handleReset = () => {
       if (window.confirm("모든 데이터를 초기화하시겠습니까?")) {
-          localStorage.removeItem('classHelperData');
-          window.location.reload();
+          saveHistory(); // History before wipe
+          // Reset logic involves clearing state, but we can also just clear local storage and reload.
+          // To support undo for reset, we should just set states to empty.
+          setStudents([]);
+          setSeparationRules([]);
+          setTags(INITIAL_TAGS);
+          // Optional: localStorage will update via useEffect
       }
   };
 
@@ -264,6 +357,7 @@ function App() {
               }
 
               if (window.confirm("현재 작업 중인 내용이 덮어씌워집니다. 계속하시겠습니까?")) {
+                  saveHistory(); // History
                   setSchoolLevel(json.schoolLevel || 'ELEMENTARY_MIDDLE');
                   setClassCount(json.classCount || 3);
                   setStudents(json.students || []);
@@ -450,13 +544,19 @@ function App() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">학교급 (정원)</label>
                         <div className="flex bg-gray-100 rounded p-1">
                             <button 
-                                onClick={() => setSchoolLevel('ELEMENTARY_MIDDLE')}
+                                onClick={() => {
+                                    saveHistory();
+                                    setSchoolLevel('ELEMENTARY_MIDDLE');
+                                }}
                                 className={`flex-1 py-1 text-xs rounded transition-colors ${schoolLevel === 'ELEMENTARY_MIDDLE' ? 'bg-white shadow text-indigo-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 초등/중학 (6명)
                             </button>
                             <button 
-                                onClick={() => setSchoolLevel('HIGH')}
+                                onClick={() => {
+                                    saveHistory();
+                                    setSchoolLevel('HIGH');
+                                }}
                                 className={`flex-1 py-1 text-xs rounded transition-colors ${schoolLevel === 'HIGH' ? 'bg-white shadow text-indigo-600 font-bold' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 고등 (7명)
@@ -468,6 +568,7 @@ function App() {
                         <input 
                             type="range" min="1" max="10" 
                             value={classCount} 
+                            onMouseDown={saveHistory} // Snapshot before drag
                             onChange={(e) => setClassCount(Number(e.target.value))}
                             className="w-full accent-indigo-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                         />
@@ -649,6 +750,26 @@ function App() {
             </div>
             
             <div className="flex items-center gap-2">
+                 {/* Undo/Redo Buttons */}
+                <div className="flex items-center bg-gray-50 rounded-lg border border-gray-300 mr-2">
+                    <button 
+                        onClick={undo}
+                        disabled={history.past.length === 0}
+                        className="p-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-l-lg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-600 transition-colors border-r border-gray-200"
+                        title="실행 취소 (Ctrl+Z)"
+                    >
+                        <Undo size={18} />
+                    </button>
+                    <button 
+                        onClick={redo}
+                        disabled={history.future.length === 0}
+                        className="p-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-r-lg disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-600 transition-colors"
+                        title="다시 실행 (Ctrl+Shift+Z)"
+                    >
+                        <Redo size={18} />
+                    </button>
+                </div>
+
                 <button 
                     onClick={() => setShowHelpModal(true)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-300 transition-colors"
