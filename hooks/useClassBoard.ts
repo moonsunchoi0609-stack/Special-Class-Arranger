@@ -127,6 +127,23 @@ export const useClassBoard = () => {
     }));
   };
 
+  const updateClassCount = (newCount: number) => {
+    saveHistory();
+    // If reducing class count, move students in removed classes to Unassigned
+    if (newCount < classCount) {
+        setStudents(prev => prev.map(s => {
+            if (s.assignedClassId) {
+                const classNum = parseInt(s.assignedClassId, 10);
+                if (!isNaN(classNum) && classNum > newCount) {
+                    return { ...s, assignedClassId: null };
+                }
+            }
+            return s;
+        }));
+    }
+    setClassCount(newCount);
+  };
+
   const addOrUpdateStudent = (studentData: { id?: string, name: string, gender: 'male' | 'female' | undefined, tagIds: string[] }) => {
     saveHistory();
     if (studentData.id) {
@@ -264,7 +281,8 @@ export const useClassBoard = () => {
   return {
     // State
     schoolLevel, setSchoolLevel,
-    classCount, setClassCount,
+    classCount, 
+    updateClassCount, // Export wrapper instead of raw setter
     students, setStudents,
     tags, setTags,
     separationRules, setSeparationRules,

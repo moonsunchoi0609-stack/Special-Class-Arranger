@@ -30,7 +30,7 @@ function App() {
   // Use Custom Hook for Business Logic
   const {
     schoolLevel, setSchoolLevel,
-    classCount, setClassCount,
+    classCount, updateClassCount,
     students,
     tags,
     separationRules,
@@ -219,14 +219,14 @@ function App() {
   const classList = Array.from({ length: classCount }, (_, i) => (i + 1).toString());
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden text-gray-800 relative">
+    <div className="flex h-screen supports-[height:100dvh]:h-[100dvh] bg-gray-100 overflow-hidden text-gray-800 relative">
       <Sidebar 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         schoolLevel={schoolLevel}
         setSchoolLevel={setSchoolLevel}
         classCount={classCount}
-        setClassCount={setClassCount}
+        setClassCount={updateClassCount}
         tags={tags}
         onAddTag={handleAddTag}
         onDeleteTag={handleDeleteTag}

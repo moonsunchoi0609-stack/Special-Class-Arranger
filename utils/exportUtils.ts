@@ -120,6 +120,12 @@ export const exportToExcel = ({
   }
 
   // 파일 다운로드
-  const fileName = `반편성결과_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
+  // 날짜 형식을 YYYY-MM-DD로 고정하여 파일명 오류 방지
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const fileName = `반편성결과_${year}-${month}-${day}.xlsx`;
+  
   XLSX.writeFile(workbook, fileName);
 };
