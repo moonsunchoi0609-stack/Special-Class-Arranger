@@ -19,8 +19,6 @@ export const INITIAL_TAGS: TagDefinition[] = [
   { id: 't6', label: '학부모예민', colorBg: 'bg-purple-100', colorText: 'text-purple-800' },
   // 9. 잦은결석
   { id: 't4', label: '잦은결석', colorBg: 'bg-gray-100', colorText: 'text-gray-800' },
-  // 10. 베드사용
-  { id: 't7', label: '베드사용', colorBg: 'bg-pink-100', colorText: 'text-pink-800' },
 ];
 
 export const TAG_COLORS = [
