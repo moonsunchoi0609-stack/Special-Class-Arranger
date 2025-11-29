@@ -1,3 +1,4 @@
+
 export type SchoolLevel = 'ELEMENTARY_MIDDLE' | 'HIGH';
 
 export interface TagDefinition {
@@ -10,7 +11,7 @@ export interface TagDefinition {
 export interface Student {
   id: string;
   name: string;
-  gender: 'male' | 'female';
+  gender?: 'male' | 'female';
   tagIds: string[];
   assignedClassId: string | null; // null means 'Unassigned'
 }

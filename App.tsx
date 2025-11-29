@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Users, Plus, Settings, Wand2, Download, Trash2, 
@@ -41,7 +42,7 @@ function App() {
   
   const [editingStudent, setEditingStudent] = useState<Student | null>(null); // If null, adding new
   const [studentFormName, setStudentFormName] = useState('');
-  const [studentFormGender, setStudentFormGender] = useState<'male' | 'female'>('male');
+  const [studentFormGender, setStudentFormGender] = useState<'male' | 'female' | undefined>(undefined);
   const [studentFormTags, setStudentFormTags] = useState<string[]>([]);
   const [showStudentModal, setShowStudentModal] = useState(false);
   
@@ -82,10 +83,10 @@ function App() {
         setSchoolLevel(parsed.schoolLevel);
         setClassCount(parsed.classCount);
         
-        // Data Migration: Ensure all students have a gender
+        // Data Migration: Preserve existing gender or leave undefined
         const migratedStudents = (parsed.students || []).map(s => ({
             ...s,
-            gender: s.gender || 'male' // Default to male if missing
+            gender: s.gender
         }));
         setStudents(migratedStudents);
         
@@ -184,12 +185,12 @@ function App() {
     if (student) {
         setEditingStudent(student);
         setStudentFormName(student.name);
-        setStudentFormGender(student.gender || 'male');
+        setStudentFormGender(student.gender);
         setStudentFormTags(student.tagIds);
     } else {
         setEditingStudent(null);
         setStudentFormName('');
-        setStudentFormGender('male');
+        setStudentFormGender(undefined); // Start unselected
         setStudentFormTags([]);
     }
     setShowStudentModal(true);
@@ -437,10 +438,10 @@ function App() {
                   setSchoolLevel(json.schoolLevel || 'ELEMENTARY_MIDDLE');
                   setClassCount(json.classCount || 3);
                   
-                  // Ensure gender field exists for loaded data
+                  // Preserve existing gender or undefined
                   const loadedStudents = (json.students || []).map((s: any) => ({
                       ...s,
-                      gender: s.gender || 'male'
+                      gender: s.gender
                   }));
                   setStudents(loadedStudents);
                   
@@ -506,7 +507,7 @@ function App() {
           } else {
               classStudents.forEach((s) => {
                   const sTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-                  const genderStr = s.gender === 'female' ? '여' : '남';
+                  const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '-');
                   assignmentData.push([`${i}반`, s.name, genderStr, sTags]);
               });
           }
@@ -519,7 +520,7 @@ function App() {
       if (unassigned.length > 0) {
           unassigned.forEach((s) => {
               const sTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-              const genderStr = s.gender === 'female' ? '여' : '남';
+              const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '-');
               assignmentData.push(['미배정', s.name, genderStr, sTags]);
           });
       }

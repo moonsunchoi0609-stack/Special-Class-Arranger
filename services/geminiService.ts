@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Student, TagDefinition, SeparationRule, SchoolLevel } from '../types';
 import { MAX_CAPACITY } from '../constants';
@@ -50,7 +51,7 @@ export const analyzeClasses = async (
        - '교사보조가능': 교사의 지시를 잘 따르거나 또래 도움을 줄 수 있어 학급 운영에 도움이 됩니다.
        - 따라서, 이 Tag를 가진 학생들은 행동 중재가 많이 필요한 학생(공격성 등)이 있는 반에 배치하여 균형을 맞추는 것이 좋습니다.
     2. **부담 가중 요소**: 그 외의 Tag(예: '공격성', '화장실지원', '보행지원', '휠체어', '학부모예민', '분쇄식' 등)는 교사의 물리적, 심리적 지원이 많이 필요한 요소입니다. 한 반에 과도하게 몰리지 않도록 해야 합니다.
-    3. **성별 균형**: 가능하다면 각 반의 남녀 성비가 고르게 분포되는 것이 좋습니다. 특정 성별이 한 반에 과도하게 쏠리지 않았는지 확인해주세요.
+    3. **성별 균형**: 학생들의 성별 정보가 있는 경우, 각 반의 남녀 성비가 고르게 분포되는 것이 좋습니다. (성별 미입력 학생은 고려하지 않음)
 
     **현재 편성 현황:**
     ${Object.entries(classesMap).map(([classId, classStudents]) => {
@@ -59,15 +60,24 @@ export const analyzeClasses = async (
         return `
       [${classId}반] (총 ${classStudents.length}명 - 남:${maleCount} / 여:${femaleCount})
       학생들: ${classStudents.map(s => {
-        const studentTags = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
-        const genderStr = s.gender === 'female' ? '여' : '남';
-        return `${maskName(s.name)}(${genderStr}, ${studentTags})`;
+        const tagsStr = s.tagIds.map(tid => tags.find(t => t.id === tid)?.label).filter(Boolean).join(', ');
+        const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '');
+        
+        let infoParts = [];
+        if (genderStr) infoParts.push(genderStr);
+        if (tagsStr) infoParts.push(tagsStr);
+        
+        const info = infoParts.join(', ');
+        return `${maskName(s.name)}${info ? `(${info})` : ''}`;
       }).join(' / ')}
     `;
     }).join('\n')}
 
     **미배정 학생:**
-    ${unassigned.map(s => `${maskName(s.name)}(${s.gender === 'female' ? '여' : '남'})`).join(', ') || '없음'}
+    ${unassigned.map(s => {
+        const genderStr = s.gender === 'female' ? '여' : (s.gender === 'male' ? '남' : '');
+        return `${maskName(s.name)}${genderStr ? `(${genderStr})` : ''}`;
+    }).join(', ') || '없음'}
 
     **분리 배정 규칙(서로 같은 반이 되면 안됨):**
     ${rules.map((r, idx) => {
@@ -85,7 +95,7 @@ export const analyzeClasses = async (
     **요청 사항:**
     1. 각 반의 **'실질적인 지도 난이도'**의 균형이 맞는지 확인하세요. (학생 수는 무조건 정원에 맞춰지므로 **학생 수 균형은 고려하지 마세요**. 오직 '부담 경감/가중 요소'를 바탕으로 한 업무 강도 균형만 판단하세요.)
     2. 특정 반에 부담 가중 요소(예: 공격성, 휠체어 등)가 과도하게 몰려 교사의 부담이 크지 않은지 확인하세요.
-    3. **성별 균형**이 적절한지 확인하고, 심각한 불균형이 있다면 지적해주세요.
+    3. **성별 균형**이 적절한지 확인하고, 심각한 불균형이 있다면 지적해주세요. (성별 미입력 시 생략)
     4. 분리 배정 규칙 위반 여부를 다시 한 번 체크하세요.
     5. 미배정 학생이 있다면 어디로 배치하는 것이 좋을지 제안하세요.
     6. **종합 분석 및 제안**: 다음 형식에 맞춰 작성해 주세요.
