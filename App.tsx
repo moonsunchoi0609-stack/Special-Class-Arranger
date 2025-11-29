@@ -663,23 +663,25 @@ function App() {
                     </div>
 
                     {/* Class Columns */}
-                    <div className="flex-1 flex gap-4 h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200">
-                        {classList.map(classId => (
-                            <div key={classId} className="w-72 h-full flex-shrink-0">
-                                <ClassColumn 
-                                    id={classId}
-                                    name={`${classId}반`}
-                                    students={students.filter(s => s.assignedClassId === classId)}
-                                    allTags={tags}
-                                    schoolLevel={schoolLevel}
-                                    separationRules={separationRules}
-                                    onDropStudent={handleDropStudent}
-                                    onEditStudent={(s) => openStudentModal(s)}
-                                    onDeleteStudent={deleteStudent}
-                                    onTouchDragStart={onTouchDragStart}
-                                />
-                            </div>
-                        ))}
+                    <div className="flex-1 w-full h-full overflow-x-auto pb-2 pl-2 border-l border-gray-200 min-w-0">
+                        <div className="flex gap-4 h-full">
+                            {classList.map(classId => (
+                                <div key={classId} className="w-72 h-full flex-shrink-0">
+                                    <ClassColumn 
+                                        id={classId}
+                                        name={`${classId}반`}
+                                        students={students.filter(s => s.assignedClassId === classId)}
+                                        allTags={tags}
+                                        schoolLevel={schoolLevel}
+                                        separationRules={separationRules}
+                                        onDropStudent={handleDropStudent}
+                                        onEditStudent={(s) => openStudentModal(s)}
+                                        onDeleteStudent={deleteStudent}
+                                        onTouchDragStart={onTouchDragStart}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

@@ -167,9 +167,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-2 text-right">
-                * X버튼을 눌러 Tag삭제
-              </p>
             </div>
           </section>
 
