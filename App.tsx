@@ -3,7 +3,7 @@ import {
     Plus, Settings, Wand2, Download,
     X, Square, RefreshCcw,
     ChevronLeft, ChevronRight, HelpCircle,
-    Undo, Redo, CheckSquare
+    Undo, Redo, CheckSquare, FileText
 } from 'lucide-react';
 
 import { 
@@ -17,6 +17,7 @@ import { StudentCard } from './components/StudentCard';
 import { StatsPanel } from './components/StatsPanel';
 import { HelpModal } from './components/HelpModal';
 import { StudentModal } from './components/StudentModal';
+import { AiReportModal } from './components/AiReportModal';
 import { Sidebar } from './components/Sidebar';
 import { analyzeClasses } from './services/geminiService';
 import { exportToExcel } from './utils/exportUtils';
@@ -40,6 +41,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUnassignedOpen, setIsUnassignedOpen] = useState(true);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showAiReport, setShowAiReport] = useState(false);
   
   const [editingStudent, setEditingStudent] = useState<Student | null>(null); // If null, adding new
   const [showStudentModal, setShowStudentModal] = useState(false);
@@ -420,16 +422,7 @@ function App() {
       const result = await analyzeClasses(students, tags, separationRules, classCount, schoolLevel);
       setAiAnalysis(result);
       setIsAnalyzing(false);
-  };
-
-  const renderAnalysisText = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="font-bold">{part.slice(2, -2)}</strong>;
-        }
-        return part;
-    });
+      setShowAiReport(true); // Automatically open report modal
   };
 
   const onExportExcel = () => {
@@ -533,6 +526,8 @@ function App() {
                 >
                     <Download size={16} className="rotate-180" /> 통계/분석
                 </button>
+                
+                {/* AI Analysis Buttons */}
                 <button 
                     onClick={handleAIAnalyze}
                     disabled={isAnalyzing}
@@ -541,6 +536,15 @@ function App() {
                    {isAnalyzing ? <RefreshCcw className="animate-spin" size={16} /> : <Wand2 size={16} />}
                    AI 분석
                 </button>
+                {aiAnalysis && !isAnalyzing && (
+                    <button
+                        onClick={() => setShowAiReport(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white text-purple-700 border border-purple-200 rounded text-sm font-medium hover:bg-purple-50 transition-colors shadow-sm"
+                        title="분석 결과 다시 보기"
+                    >
+                         <FileText size={16} /> 리포트
+                    </button>
+                )}
             </div>
         </header>
 
@@ -560,16 +564,6 @@ function App() {
                         </button>
                     </div>
                     <StatsPanel students={students} tags={tags} classCount={classCount} />
-                    {aiAnalysis && (
-                        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl mx-auto mt-4 border border-purple-100">
-                            <h3 className="flex items-center gap-2 font-bold text-purple-800 mb-3">
-                                <Wand2 size={18} /> AI 분석 결과
-                            </h3>
-                            <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed bg-purple-50 p-4 rounded-lg">
-                                {renderAnalysisText(aiAnalysis)}
-                            </div>
-                        </div>
-                    )}
                 </div>
             ) : (
                 <div className="flex h-full gap-4 min-w-max">
@@ -715,6 +709,13 @@ function App() {
       {showHelpModal && (
         <HelpModal onClose={() => setShowHelpModal(false)} />
       )}
+      
+      {/* AI Report Modal */}
+      <AiReportModal 
+        isOpen={showAiReport} 
+        onClose={() => setShowAiReport(false)}
+        analysisResult={aiAnalysis}
+      />
 
       {/* Student Add/Edit Modal */}
       <StudentModal 
